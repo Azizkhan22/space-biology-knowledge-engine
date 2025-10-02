@@ -346,7 +346,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         <div 
           ref={containerRef} 
           className="w-full h-full bg-gradient-to-br from-space-900/50 to-cosmic-900/30"
-          style={{ minHeight: '400px' }}
+          style={{ minHeight: '400px',maxHeight: '600px' }}
         />
         
 

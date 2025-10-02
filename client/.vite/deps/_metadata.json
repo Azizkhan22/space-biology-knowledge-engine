@@ -1,0 +1,46 @@
+{
+  "hash": "3f6c653d",
+  "configHash": "71203668",
+  "lockfileHash": "de26de74",
+  "browserHash": "0deb29fc",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "6ce593b7",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "2874e471",
+      "needsInterop": true
+    },
+    "cytoscape": {
+      "src": "../../node_modules/cytoscape/dist/cytoscape.esm.mjs",
+      "file": "cytoscape.js",
+      "fileHash": "f014caf3",
+      "needsInterop": false
+    },
+    "cytoscape-dagre": {
+      "src": "../../node_modules/cytoscape-dagre/cytoscape-dagre.js",
+      "file": "cytoscape-dagre.js",
+      "fileHash": "f931ebde",
+      "needsInterop": true
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
+      "file": "lucide-react.js",
+      "fileHash": "b2ca60a8",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-VUNGVS7X": {
+      "file": "chunk-VUNGVS7X.js"
+    },
+    "chunk-PR4QN5HX": {
+      "file": "chunk-PR4QN5HX.js"
+    }
+  }
+}

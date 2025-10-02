@@ -154,7 +154,7 @@ function App() {
           </div>
 
           {/* Center Panel - Knowledge Graph */}
-          <div className="w-full lg:w-1/3 xl:w-2/5 border-r border-white/10 bg-black/10 backdrop-blur-sm graph-update">
+          <div className="w-full lg:w-1/3 xl:w-2/5 border-r border-white/10 bg-black/10 graph-update">
             <KnowledgeGraph
               selectedPaper={selectedPaper}
               publications={filteredPublications}

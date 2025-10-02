@@ -63,11 +63,13 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
         </div>
         {/* Loader at the top */}
         <div className="p-4 pt-8 loading-pulse">
-          <Loader className="h-8 w-8 animate-spin text-cosmic-400 mb-2" />
+          <div className="flex justify-center items-center w-full">
+            <Loader className="h-8 w-8 animate-spin text-cosmic-400 mb-2" />
+          </div>
           <p className="text-gray-400 text-center">
-            {isSearchMode ? 'Searching publications...' : 
-             selectedEntity ? 'Loading related articles...' : 
-             'Loading suggested articles...'}
+            {isSearchMode ? 'Searching publications...' :
+              selectedEntity ? 'Loading related articles...' :
+                'Loading suggested articles...'}
           </p>
         </div>
       </div>
@@ -92,7 +94,7 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
               {displayInfo.description} ({publications.length} publications)
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setFilterOpen(!filterOpen)}
@@ -100,7 +102,7 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
             >
               <Filter className="h-4 w-4 text-gray-400" />
             </button>
-            
+
             <div className="relative">
               <select
                 value={sortBy}
@@ -146,7 +148,10 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
       </div>
 
       {/* Results List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 list-update">
+      <div style={{
+        scrollbarWidth: "none", // Firefox
+        msOverflowStyle: "none", // IE 10+
+      }} className="flex-1 overflow-y-auto p-4 space-y-4 list-update max-h-[700px] overflow-y-scroll">
         {publications.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
@@ -161,18 +166,17 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
           publications.map((paper) => (
             <div
               key={paper.id}
-              className={`glass-effect rounded-xl p-4 cursor-pointer transition-all duration-300 card-hover ${
-                selectedPaper?.id === paper.id
-                  ? 'ring-2 ring-cosmic-500 bg-cosmic-500/10'
-                  : 'hover:bg-white/5'
-              }`}
+              className={`glass-effect rounded-xl p-4 cursor-pointer transition-all duration-300 card-hover ${selectedPaper?.id === paper.id
+                ? 'ring-2 ring-cosmic-500 bg-cosmic-500/10'
+                : 'hover:bg-white/5'
+                }`}
               onClick={() => handlePaperSelect(paper)}
             >
               <div className="mb-3">
                 <h3 className="font-semibold text-white text-sm leading-tight mb-2">
                   {paper.title}
                 </h3>
-                
+
                 <div className="flex items-center space-x-4 text-xs text-gray-400 mb-3">
                   <div className="flex items-center space-x-1">
                     <Calendar className="h-3 w-3" />
@@ -209,7 +213,7 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
                     </span>
                   )}
                 </div>
-                
+
                 <button className="flex items-center space-x-1 text-xs text-cosmic-300 hover:text-cosmic-200 transition-colors duration-200">
                   <Eye className="h-3 w-3" />
                   <span>View Details</span>
@@ -219,7 +223,7 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
           ))
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

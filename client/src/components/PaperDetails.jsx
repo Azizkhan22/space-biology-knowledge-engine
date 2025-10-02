@@ -182,7 +182,10 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div style={{
+        scrollbarWidth: "none", // Firefox
+        msOverflowStyle: "none", // IE 10+
+      }} className="flex-1 overflow-y-auto p-4 max-h-[600px] overflow-y-scroll">
         {activeTab === 'abstract' && (
           <div className="space-y-4 content-update">
             <div className="glass-effect rounded-xl p-6">
