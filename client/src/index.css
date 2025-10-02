@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+@theme {
+  --color-space: {
+    50: #f0f4ff;
+    100: #dbeafe;
+    200: #bfdbfe;
+    300: #93c5fd;
+    400: #60a5fa;
+    500: #3b82f6;
+    600: #2563eb;
+    700: #1d4ed8;
+    800: #1e40af;
+    900: #1e3a8a;
+  }
+  
+  --color-cosmic: {
+    50: #fdf4ff;
+    100: #fae8ff;
+    200: #f5d0fe;
+    300: #f0abfc;
+    400: #e879f9;
+    500: #d946ef;
+    600: #c026d3;
+    700: #a21caf;
+    800: #86198f;
+    900: #701a75;
+  }
+}
+
+@layer base {
+  body {
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    @apply text-white font-sans antialiased;
+    margin: 0;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:scale-105 hover:shadow-2xl;
+    box-shadow: 0 25px 50px -12px rgba(212, 70, 239, 0.25);
+  }
+  
+  .card-hover:hover {
+    box-shadow: 0 25px 50px -12px rgba(212, 70, 239, 0.4);
+  }
+  
+  .space-button {
+    background: linear-gradient(to right, #2563eb, #c026d3);
+    @apply text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl;
+  }
+  
+  .space-button:hover {
+    background: linear-gradient(to right, #3b82f6, #d946ef);
+  }
+  
+  .search-glow:focus {
+    @apply ring-4 outline-none;
+    ring-color: rgba(212, 70, 239, 0.5);
+    border-color: #e879f9;
+  }
+
+  /* Standard App Animations */
+  .smooth-update {
+    @apply transition-all duration-500 ease-in-out;
+  }
+
+  .panel-update {
+    @apply transition-all duration-400 ease-out;
+    animation: panel-fade-in 0.4s ease-out;
+  }
+
+  .content-update {
+    @apply transition-opacity duration-300 ease-in-out;
+    animation: content-slide-up 0.3s ease-out;
+  }
+
+  .list-update {
+    animation: list-fade-in 0.5s ease-out;
+  }
+
+  .graph-update {
+    animation: graph-zoom-in 0.6s ease-out;
+  }
+
+  /* Keyframes for animations */
+  @keyframes panel-fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes content-slide-up {
+    0% {
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes list-fade-in {
+    0% {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes graph-zoom-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Loading animation */
+  .loading-pulse {
+    animation: loading-pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes loading-pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+}
