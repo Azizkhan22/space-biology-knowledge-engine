@@ -150,12 +150,30 @@ function App() {
   const handleGenerateAISummary = async (paper) => {
     setIsGeneratingAI(true);
     
-    // Simulate AI generation delay
-    setTimeout(() => {
-      // In a real app, this would call an AI API
-      console.log('Generating AI summary for:', paper.title);
+    try {
+      const response = await ApiService.generateAISummary(paper.id, paper);
+      
+      if (response.success) {
+        // Update the paper with the new AI-generated summary
+        setSelectedPaper(prev => ({
+          ...prev,
+          aiSummary: response.data.summary
+        }));
+        
+        // Also update in the filtered publications list
+        setFilteredPublications(prev => 
+          prev.map(p => 
+            p.id === paper.id ? { ...p, aiSummary: response.data.summary } : p
+          )
+        );
+      } else {
+        console.error('Failed to generate AI summary:', response.error);
+      }
+    } catch (error) {
+      console.error('Error generating AI summary:', error);
+    } finally {
       setIsGeneratingAI(false);
-    }, 2000);
+    }
   };
 
   // Initialize app data

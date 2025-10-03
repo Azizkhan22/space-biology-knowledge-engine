@@ -1,6 +1,9 @@
 // API service for backend communication
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+// Import askAI function for testing
+import { askAI } from './aiChat.js';
+
 // Simulate network delay for development
 const simulateDelay = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -11,11 +14,11 @@ export class ApiService {
     try {
       // Simulate API call
       await simulateDelay();
-      
+
       // In real implementation, this would be:
       // const response = await fetch(`${API_BASE_URL}/articles/suggested`);
       // return response.json();
-      
+
       // Return dummy suggested articles
       return {
         success: true,
@@ -92,7 +95,7 @@ export class ApiService {
   static async searchArticles(query, filters = {}) {
     try {
       await simulateDelay(1000);
-      
+
       // In real implementation:
       // const response = await fetch(`${API_BASE_URL}/articles/search`, {
       //   method: 'POST',
@@ -100,7 +103,7 @@ export class ApiService {
       //   body: JSON.stringify({ query, filters })
       // });
       // return response.json();
-      
+
       // Simulate search results based on query
       const searchResults = [
         {
@@ -157,11 +160,11 @@ export class ApiService {
   static async getKnowledgeGraph() {
     try {
       await simulateDelay(600);
-      
+
       // In real implementation:
       // const response = await fetch(`${API_BASE_URL}/knowledge-graph`);
       // return response.json();
-      
+
       return {
         success: true,
         data: {
@@ -211,11 +214,11 @@ export class ApiService {
   static async getArticlesByEntity(entityId, entityLabel) {
     try {
       await simulateDelay(700);
-      
+
       // In real implementation:
       // const response = await fetch(`${API_BASE_URL}/articles/by-entity/${entityId}`);
       // return response.json();
-      
+
       // Generate articles related to the selected entity
       const relatedArticles = [
         {
@@ -268,35 +271,90 @@ export class ApiService {
     }
   }
 
+  // Generate AI summary for an article
+  static async generateAISummary(articleId, articleData) {
+    try {
+      await simulateDelay(2000);
+
+      // In real implementation:
+      // const response = await fetch(`${API_BASE_URL}/ai/summary`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ articleId, articleData })
+      // });
+      // return response.json();
+
+      // For testing: Use the askAI module to generate summary
+      const context = `
+Title: ${articleData.title}
+Authors: ${articleData.authors?.join(', ') || 'Unknown'}
+Year: ${articleData.year || 'Unknown'}
+Abstract: ${articleData.abstract || 'No abstract available'}
+Tags: ${articleData.tags?.join(', ') || 'No tags'}
+      `;
+
+      const question = "Please provide a comprehensive summary of this research paper, highlighting the main findings, methodology, and implications for space research.";
+
+      const summary = await askAI(context, question);
+
+      return {
+        success: true,
+        data: {
+          articleId: articleId,
+          summary: summary,
+          timestamp: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('Error generating AI summary:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Ask AI questions about an article
-  static async askAIQuestion(articleId, question) {
+  static async askAIQuestion(articleId, question, articleData = null) {
     try {
       await simulateDelay(1500);
-      
+
       // In real implementation:
       // const response = await fetch(`${API_BASE_URL}/ai/ask`, {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ articleId, question })
+      //   body: JSON.stringify({ articleId, question, articleData })
       // });
       // return response.json();
-      
-      // Generate AI response based on question
-      const responses = [
-        `Based on the article content, ${question.toLowerCase()} relates to the key findings about space research. The study shows that this aspect is particularly important for understanding how biological systems adapt to space environments.`,
-        `The research indicates that ${question.toLowerCase()} is a critical factor in space missions. According to the data presented, this has significant implications for astronaut health and mission success.`,
-        `From the article's analysis, ${question.toLowerCase()} demonstrates interesting patterns that align with previous space biology research. The authors suggest this could inform future mission planning.`,
-        `The study's findings suggest that ${question.toLowerCase()} plays a vital role in space exploration. The research methodology and results provide valuable insights for the space science community.`
-      ];
 
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+      // For testing: Use the askAI module
+      let context;
+
+      if (articleData) {
+        // Use real article data if provided
+        context = `
+Title: ${articleData.title}
+Authors: ${articleData.authors?.join(', ') || 'Unknown'}
+Year: ${articleData.year || 'Unknown'}
+Abstract: ${articleData.abstract || 'No abstract available'}
+AI Summary: ${articleData.aiSummary || 'No summary available'}
+Tags: ${articleData.tags?.join(', ') || 'No tags'}
+        `;
+      } else {
+        // Fallback to generic context
+        context = `
+This is a research paper about space biology and related topics.
+The paper discusses various aspects of biological systems in space environments.
+It covers topics such as microgravity effects, human health in space, and space research methodologies.
+The research has implications for long-duration space missions and astronaut health.
+        `;
+      }
+
+      const answer = await askAI(context, question);
 
       return {
         success: true,
         data: {
           question: question,
-          answer: randomResponse,
-          confidence: Math.random() * 0.3 + 0.7, // Random confidence between 0.7-1.0
+          answer: answer,
+          confidence: 0.8, // Default confidence for askAI module
           sources: [`Article ID: ${articleId}`, "NASA Space Biology Database", "International Space Station Research"],
           timestamp: new Date().toISOString()
         }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Users, 
   Calendar, 
@@ -15,6 +15,7 @@ import {
   Send
 } from 'lucide-react';
 import ApiService from '../services/api';
+import { askAI } from '../services/aiChat';
 
 const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
   const [activeTab, setActiveTab] = useState('abstract');
@@ -22,6 +23,20 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
   const [chatMessages, setChatMessages] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [isAskingAI, setIsAskingAI] = useState(false);
+  const [copied, setCopied] = useState(false); // <-- Copy feedback state
+  const chatContainerRef = useRef(null);
+
+  // Reset chat messages when paper changes
+  useEffect(() => {
+    setChatMessages([]);
+  }, [paper?.id]);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages, isAskingAI]);
 
   if (!paper) {
     return (
@@ -62,7 +77,7 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
     setChatMessages(prev => [...prev, userMessage]);
 
     try {
-      const response = await ApiService.askAIQuestion(paper.id, question);
+      const response = await ApiService.askAIQuestion(paper.id, question, paper);
       
       if (response.success) {
         const aiMessage = {
@@ -97,8 +112,17 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
     }
   };
 
+  // Copy article URL to clipboard
+  const handleCopyUrl = () => {
+    if (paper.url) {
+      navigator.clipboard.writeText(paper.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
   const tabs = [
-    { id: 'abstract', label: 'Abstract', icon: BookOpen },
+    { id: 'abstract', label: 'Read', icon: BookOpen },
     { id: 'summary', label: 'AI Summary', icon: Sparkles },
     { id: 'chat', label: 'AI Chat', icon: MessageCircle },
   ];
@@ -111,13 +135,28 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
           <h2 className="text-lg font-semibold text-white">Paper Details</h2>
           
           <div className="flex items-center space-x-2">
-            <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200" title="Bookmark">
-              <Bookmark className="h-4 w-4 text-gray-400" />
-            </button>
-            <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200" title="Share">
+            {/* Copy URL button */}
+            <button
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200 relative"
+              title={paper.url ? "Copy Article Link" : "No link available"}
+              onClick={handleCopyUrl}
+              disabled={!paper.url}
+            >
               <Share2 className="h-4 w-4 text-gray-400" />
+              {copied && (
+                <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-cosmic-600 text-white text-xs rounded px-2 py-1 shadow-lg z-10">
+                  Copied!
+                </span>
+              )}
             </button>
-            <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200" title="External Link">
+          
+            {/* External link button */}
+            <button
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
+              title={paper.url ? "Open Article in New Tab" : "No link available"}
+              onClick={() => paper.url && window.open("https://www.google.com", '_blank', 'noopener,noreferrer')}
+              disabled={!paper.url}
+            >
               <ExternalLink className="h-4 w-4 text-gray-400" />
             </button>
           </div>
@@ -184,6 +223,7 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
       }} className="flex-1 overflow-y-auto p-4 max-h-[600px] overflow-y-scroll">
         {activeTab === 'abstract' && (
           <div className="space-y-4 content-update">
+            {/* Abstract Section */}
             <div className="glass-effect rounded-xl p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Abstract</h3>
               <div className="relative">
@@ -214,20 +254,64 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
               </div>
             </div>
 
-            {/* Related Publications */}
-            <div className="glass-effect rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Related Publications</h3>
-              <div className="space-y-3">
-                {paper.connections.map((connId, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors duration-200 cursor-pointer">
-                    <div className="w-2 h-2 bg-cosmic-400 rounded-full"></div>
-                    <span className="text-sm text-gray-300">
-                      Related Publication #{connId}
-                    </span>
-                  </div>
-                ))}
+            {/* Methodology Section - Only show if data is available */}
+            {paper.methodology && (
+              <div className="glass-effect rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Methodology</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  {paper.methodology}
+                </p>
               </div>
-            </div>
+            )}
+
+            {/* Key Findings Section - Only show if data is available */}
+            {paper.keyFindings && (
+              <div className="glass-effect rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Key Findings</h3>
+                <div className="space-y-3">
+                  {Array.isArray(paper.keyFindings) ? (
+                    paper.keyFindings.map((finding, index) => (
+                      <div key={index} className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-300">{finding}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-300 leading-relaxed">{paper.keyFindings}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Implications Section - Only show if data is available */}
+            {paper.implications && (
+              <div className="glass-effect rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Implications</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  {paper.implications}
+                </p>
+              </div>
+            )}
+
+            {/* Research Context Section - Only show if data is available */}
+            {paper.researchContext && (
+              <div className="glass-effect rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Research Context</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  {paper.researchContext}
+                </p>
+              </div>
+            )}
+
+            {/* Future Work Section - Only show if data is available */}
+            {paper.futureWork && (
+              <div className="glass-effect rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Future Work</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  {paper.futureWork}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -249,55 +333,30 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Generate New Summary
+                      Generate Summary
                     </>
                   )}
                 </button>
               </div>
               
-              <div className="bg-gradient-to-br from-cosmic-900/30 to-space-900/30 rounded-lg p-4 border border-cosmic-500/30">
-                <p className="text-gray-300 leading-relaxed">
-                  {paper.aiSummary}
-                </p>
-              </div>
-            </div>
-
-            {/* Key Insights */}
-            <div className="glass-effect rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Key Insights</h3>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2"></div>
-                  <p className="text-sm text-gray-300">
-                    This research contributes to our understanding of biological processes in space environments.
+              <div className="bg-gradient-to-br from-cosmic-900/30 to-space-900/30 rounded-lg p-4 border border-cosmic-500/30 min-h-[200px]">
+                {paper.aiSummary ? (
+                  <p className="text-gray-300 leading-relaxed">
+                    {paper.aiSummary}
                   </p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
-                  <p className="text-sm text-gray-300">
-                    Findings have implications for long-duration space missions and crew health.
-                  </p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-purple-400 rounded-full mt-2"></div>
-                  <p className="text-sm text-gray-300">
-                    Results inform future research directions and space exploration strategies.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Citations */}
-            <div className="glass-effect rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Citation</h3>
-              <div className="bg-space-800/50 rounded-lg p-4 border border-white/10">
-                <code className="text-sm text-gray-300">
-                  {paper.authors[0]} et al. ({paper.year}). {paper.title}. 
-                  NASA Biological and Physical Sciences Research.
-                </code>
-                <button className="mt-2 text-cosmic-300 hover:text-cosmic-200 text-sm transition-colors duration-200">
-                  Copy Citation
-                </button>
+                ) : (
+                  <div className="flex items-center justify-center h-full min-h-[150px]">
+                    <div className="text-center">
+                      <Sparkles className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+                      <p className="text-gray-400 text-sm mb-2">
+                        No AI summary generated yet
+                      </p>
+                      <p className="text-gray-500 text-xs">
+                        Click "Generate Summary" to create an AI-powered summary of this research paper
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -318,7 +377,14 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
 
             {/* Chat Messages */}
             <div className="flex-1 glass-effect rounded-xl p-4 overflow-hidden flex flex-col">
-              <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+              <div 
+                ref={chatContainerRef}
+                className="flex-1 overflow-y-auto space-y-4 mb-4 custom-scrollbar"
+                style={{
+                  scrollbarWidth: "thin",
+                  scrollbarColor: "#521887 rgba(26, 26, 46, 0.3)"
+                }}
+              >
                 {chatMessages.length === 0 ? (
                   <div className="text-center py-8">
                     <MessageCircle className="h-12 w-12 text-gray-500 mx-auto mb-3" />
@@ -338,33 +404,15 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
                       className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-lg p-3 ${
+                        className={`max-w-[80%] rounded-xl p-4 ${
                           message.type === 'user'
-                            ? 'bg-cosmic-600 text-white'
+                            ? 'bg-gradient-to-r from-cosmic-600 to-cosmic-500 text-white shadow-lg'
                             : message.type === 'error'
-                            ? 'bg-red-600/20 border border-red-500/30 text-red-200'
-                            : 'bg-space-800/50 border border-space-600/30 text-gray-200'
+                            ? 'bg-red-600/20 border border-red-500/30 text-red-200 rounded-xl'
+                            : 'bg-gradient-to-r from-space-800/80 to-space-700/80 border border-space-600/30 text-gray-200 shadow-lg rounded-xl'
                         }`}
                       >
                         <p className="text-sm leading-relaxed">{message.content}</p>
-                        {message.type === 'ai' && message.confidence && (
-                          <div className="mt-2 pt-2 border-t border-white/10">
-                            <div className="flex items-center justify-between text-xs text-gray-400">
-                              <span>Confidence: {Math.round(message.confidence * 100)}%</span>
-                              <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
-                            </div>
-                            {message.sources && message.sources.length > 0 && (
-                              <div className="mt-1">
-                                <p className="text-xs text-gray-500">Sources:</p>
-                                <ul className="text-xs text-gray-400 ml-2">
-                                  {message.sources.slice(0, 2).map((source, index) => (
-                                    <li key={index}>• {source}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))
