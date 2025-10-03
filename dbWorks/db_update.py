@@ -1,9 +1,14 @@
-
 import pymongo
 from pymongo.errors import PyMongoError
+from dotenv import load_dotenv
+import os
 
-# Replace with your actual Atlas connection string
-MONGO_URI = "mongodb+srv://syedkhizerhaider:khizer@courseup.9edq0ii.mongodb.net/?retryWrites=true&w=majority&appName=CourseUp"
+# Load environment variables from .env
+load_dotenv()
+
+# Get the MongoDB URI from .env
+MONGO_URI = os.getenv("MONGO_URI")
+
 
 try:
     print("🔗 Connecting to MongoDB Atlas...")
