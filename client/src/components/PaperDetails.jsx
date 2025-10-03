@@ -139,11 +139,7 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-cosmic-400" />
               <span>{paper.year}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Tag className="h-4 w-4 text-cosmic-400" />
-              <span>{paper.topic}</span>
-            </div>
+            </div>            
           </div>
         </div>
 

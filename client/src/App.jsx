@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Navigation from './components/Navigation';
 import SearchResults from './components/SearchResults';
 import KnowledgeGraph from './components/KnowledgeGraph';
@@ -17,6 +17,28 @@ function App() {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [knowledgeGraphData, setKnowledgeGraphData] = useState(null);
   const [selectedEntity, setSelectedEntity] = useState(null);
+
+  // Refs for smooth scrolling
+  const paperDetailsRef = useRef(null);
+  const searchResultsRef = useRef(null);
+
+  // Smooth scroll helper function
+  const smoothScrollTo = useCallback((element, offset = 0) => {
+    if (!element) return;
+    
+    const elementPosition = element.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - offset;
+    
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    });
+  }, []);
+
+  // Check if screen is mobile or tablet
+  const isMobileOrTablet = useCallback(() => {
+    return window.innerWidth < 1024; // lg breakpoint in Tailwind
+  }, []);
 
   // Handle search functionality
   const handleSearch = async (query) => {
@@ -44,6 +66,11 @@ function App() {
       setFilteredPublications([]);
     } finally {
       setIsLoading(false);
+    }
+
+    // Scroll to search results panel on mobile/tablet when searching
+    if (query.trim() && isMobileOrTablet() && searchResultsRef.current) {
+      smoothScrollTo(searchResultsRef.current, 80);
     }
   };
 
@@ -98,7 +125,26 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, []); // Empty dependency array since this function doesn't depend on any state that changes
+
+    // Scroll to search results panel on mobile/tablet
+    if (isMobileOrTablet() && searchResultsRef.current) {
+      setTimeout(() => {
+        smoothScrollTo(searchResultsRef.current, 80);
+      }, 100);
+    }
+  }, [isMobileOrTablet, smoothScrollTo]);
+
+  // Handle paper selection with smooth scrolling
+  const handlePaperSelect = useCallback((paper) => {
+    setSelectedPaper(paper);
+    
+    // Scroll to paper details panel on mobile/tablet
+    if (isMobileOrTablet() && paperDetailsRef.current) {
+      setTimeout(() => {
+        smoothScrollTo(paperDetailsRef.current, 80);
+      }, 100);
+    }
+  }, [isMobileOrTablet, smoothScrollTo]);
 
   // Handle AI summary generation
   const handleGenerateAISummary = async (paper) => {
@@ -140,21 +186,11 @@ function App() {
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col lg:flex-row">
-          {/* Left Panel - Search Results */}
-          <div className="w-full lg:w-1/3 xl:w-1/4 border-r border-white/10 bg-black/20 backdrop-blur-sm panel-update">
-            <SearchResults
-              publications={filteredPublications}
-              selectedPaper={selectedPaper}
-              setSelectedPaper={setSelectedPaper}
-              isLoading={isLoading}
-              isSearchMode={isSearchMode}
-              selectedEntity={selectedEntity}
-              searchQuery={searchQuery}
-            />
-          </div>
-
-          {/* Center Panel - Knowledge Graph */}
-          <div className="w-full lg:w-1/3 xl:w-2/5 border-r border-white/10 bg-black/10 graph-update">
+          {/* Mobile Layout: Knowledge Graph First, then Search Results, then Paper Details */}
+          {/* Desktop Layout: Search Results, Knowledge Graph, Paper Details */}
+          
+          {/* Knowledge Graph Panel - Top on mobile, Center on desktop */}
+          <div className="w-full lg:w-1/3 xl:w-2/5 border-r border-white/10 bg-black/10 graph-update order-1 lg:order-2 h-100 lg:h-auto">
             <KnowledgeGraph
               selectedPaper={selectedPaper}
               publications={filteredPublications}
@@ -164,8 +200,21 @@ function App() {
             />
           </div>
 
-          {/* Right Panel - Paper Details */}
-          <div className="w-full lg:w-1/3 xl:w-1/3 bg-black/20 backdrop-blur-sm panel-update">
+          {/* Search Results Panel - Middle on mobile, Left on desktop */}
+          <div ref={searchResultsRef} className="w-full lg:w-1/3 xl:w-1/4 border-r border-white/10 bg-black/20 backdrop-blur-sm panel-update order-2 lg:order-1">
+            <SearchResults
+              publications={filteredPublications}
+              selectedPaper={selectedPaper}
+              setSelectedPaper={handlePaperSelect}
+              isLoading={isLoading}
+              isSearchMode={isSearchMode}
+              selectedEntity={selectedEntity}
+              searchQuery={searchQuery}
+            />
+          </div>
+
+          {/* Paper Details Panel - Bottom on mobile, Right on desktop */}
+          <div ref={paperDetailsRef} className="w-full lg:w-1/3 xl:w-1/3 bg-black/20 backdrop-blur-sm panel-update order-3 lg:order-3">
             <PaperDetails
               paper={selectedPaper}
               onGenerateAISummary={handleGenerateAISummary}

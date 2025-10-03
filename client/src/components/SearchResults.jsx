@@ -185,11 +185,7 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
                   <div className="flex items-center space-x-1">
                     <Users className="h-3 w-3" />
                     <span>{paper.authors.length} authors</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Tag className="h-3 w-3" />
-                    <span>{paper.topic}</span>
-                  </div>
+                  </div>                  
                 </div>
               </div>
 
