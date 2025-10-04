@@ -21,7 +21,7 @@ router.get('/knowledge-graph', articleController.getKnowledgeGraph);
 router.get('/:id', mongoIdValidation, articleController.getArticleById);
 
 // Search articles
-router.post('/search', searchArticlesValidation, paginationValidation, articleController.searchArticles);
+router.post('/search', articleController.searchArticles);
 
 // Get articles by topic/entity
 router.get('/topic/:topic', topicValidation, paginationValidation, articleController.getArticlesByTopic);

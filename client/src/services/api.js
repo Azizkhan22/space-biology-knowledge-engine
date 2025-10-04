@@ -43,21 +43,21 @@ export class ApiService {
   }
 
   // Get knowledge graph entities and relations
-  static async getKnowledgeGraph() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/articles/knowledge-graph`);
-      const data = await response.json();
-      console.log(data);
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch knowledge graph');
-      }
+  // static async getKnowledgeGraph() {
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/articles/knowledge-graph`);
+  //     const data = await response.json();
+  //     console.log(data);
+  //     if (!response.ok) {
+  //       throw new Error(data.error || 'Failed to fetch knowledge graph');
+  //     }
       
-      return data;
-    } catch (error) {
-      console.error('Error fetching knowledge graph:', error);
-      return { success: false, error: error.message };
-    }
-  }
+  //     return data;
+  //   } catch (error) {
+  //     console.error('Error fetching knowledge graph:', error);
+  //     return { success: false, error: error.message };
+  //   }
+  // }
 
   // Get articles related to a specific entity/topic
   static async getArticlesByEntity(entityId, entityLabel) {
