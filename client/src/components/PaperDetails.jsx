@@ -17,19 +17,23 @@ import {
 import ApiService from '../services/api';
 import { askAI } from '../services/aiChat';
 
-const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
+const PaperDetails = ({ paper }) => {
   const [activeTab, setActiveTab] = useState('abstract');
   const [isAbstractExpanded, setIsAbstractExpanded] = useState(false);
+  const [isResultsExpanded, setIsResultsExpanded] = useState(false);
+  const [isConclusionsExpanded, setIsConclusionsExpanded] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [copied, setCopied] = useState(false); // <-- Copy feedback state
   const chatContainerRef = useRef(null);
+  const [aiSummary, setAiSummary] = useState(paper?.aiSummary || '');
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
   // Reset chat messages when paper changes
   useEffect(() => {
     setChatMessages([]);
-  }, [paper?.id]);
+  }, [paper?._id]);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -37,6 +41,10 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatMessages, isAskingAI]);
+
+  useEffect(() => {
+    setAiSummary(paper?.aiSummary || '');
+  }, [paper?._id, paper?.aiSummary]);
 
   if (!paper) {
     return (
@@ -77,7 +85,7 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
     setChatMessages(prev => [...prev, userMessage]);
 
     try {
-      const response = await ApiService.askAIQuestion(paper.id, question, paper);
+      const response = await ApiService.askAIQuestion(paper._id, question, paper);
       
       if (response.success) {
         const aiMessage = {
@@ -112,10 +120,28 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
     }
   };
 
+  // Handle AI summary generation
+  const handleGenerateAISummary = async () => {
+    if (!paper?._id || isGeneratingSummary) return;
+    setIsGeneratingSummary(true);
+    try {
+      const response = await ApiService.generateAISummary(paper._id, paper);
+      if (response.success && response.data && response.data.summary) {
+        setAiSummary(response.data.summary);
+      } else {
+        setAiSummary('Failed to generate summary. Please try again.');
+      }
+    } catch (error) {
+      setAiSummary('Failed to generate summary. Please try again.');
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
   // Copy article URL to clipboard
   const handleCopyUrl = () => {
-    if (paper.url) {
-      navigator.clipboard.writeText(paper.url);
+    if (paper.Link) {
+      navigator.clipboard.writeText(paper.Link);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     }
@@ -128,7 +154,7 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
   ];
 
   return (
-    <div className="h-full flex flex-col content-update">
+    <div className="h-full flex flex-col content-update transition-all duration-300 ease-in-out">
       {/* Header */}
       <div className="p-4 border-b border-white/10">
         <div className="flex items-start justify-between mb-4">
@@ -138,9 +164,9 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
             {/* Copy URL button */}
             <button
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200 relative"
-              title={paper.url ? "Copy Article Link" : "No link available"}
+              title={paper.Link ? "Copy Article Link" : "No link available"}
               onClick={handleCopyUrl}
-              disabled={!paper.url}
+              disabled={!paper.Link}
             >
               <Share2 className="h-4 w-4 text-gray-400" />
               {copied && (
@@ -153,9 +179,9 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
             {/* External link button */}
             <button
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
-              title={paper.url ? "Open Article in New Tab" : "No link available"}
-              onClick={() => paper.url && window.open("https://www.google.com", '_blank', 'noopener,noreferrer')}
-              disabled={!paper.url}
+              title={paper.Link ? "Open Article in New Tab" : "No link available"}
+              onClick={() => paper.Link && window.open(paper.Link, '_blank', 'noopener,noreferrer')}
+              disabled={!paper.Link}
             >
               <ExternalLink className="h-4 w-4 text-gray-400" />
             </button>
@@ -164,27 +190,34 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
 
         {/* Title */}
         <h1 className="text-xl font-bold text-white leading-tight mb-4">
-          {paper.title}
+          {paper.Title}
         </h1>
 
         {/* Metadata */}
         <div className="grid grid-cols-1 gap-3 mb-4">
           <div className="flex items-center space-x-2 text-sm text-gray-300">
             <Users className="h-4 w-4 text-cosmic-400" />
-            <span>{paper.authors.join(', ')}</span>
+            <span>
+              {paper.Authors && paper.Authors.length > 0 
+                ? paper.Authors.length > 4 
+                  ? `${paper.Authors.slice(0, 4).join(', ')}...`
+                  : paper.Authors.join(', ')
+                : 'Unknown authors'
+              }
+            </span>
           </div>
           
           <div className="flex items-center space-x-4 text-sm text-gray-300">
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-cosmic-400" />
-              <span>{paper.year}</span>
+              <span>{new Date(paper.PublishedDate).getFullYear()}</span>
             </div>            
           </div>
         </div>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {paper.tags.map((tag, index) => (
+          {paper.tags?.map((tag, index) => (
             <span
               key={index}
               className="px-3 py-1 text-xs bg-gradient-to-r from-cosmic-600/30 to-space-600/30 text-cosmic-200 rounded-full border border-cosmic-500/30"
@@ -228,12 +261,12 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
               <h3 className="text-lg font-semibold text-white mb-4">Abstract</h3>
               <div className="relative">
                 <p className={`text-gray-300 leading-relaxed ${
-                  !isAbstractExpanded && paper.abstract.length > 500 ? 'line-clamp-6' : ''
+                  !isAbstractExpanded && paper.Abstract?.length > 500 ? 'line-clamp-6' : ''
                 }`}>
-                  {paper.abstract}
+                  {paper.Abstract}
                 </p>
                 
-                {paper.abstract.length > 500 && (
+                {paper.Abstract?.length > 500 && (
                   <button
                     onClick={() => setIsAbstractExpanded(!isAbstractExpanded)}
                     className="mt-3 flex items-center space-x-1 text-cosmic-300 hover:text-cosmic-200 transition-colors duration-200 text-sm"
@@ -254,64 +287,70 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
               </div>
             </div>
 
-            {/* Methodology Section - Only show if data is available */}
-            {paper.methodology && (
+            {/* Results and Discussion Section - Only show if data is available */}
+            {paper['Results and Discussion'] != "Not Found" && paper['Results and Discussion'].trim() && (
               <div className="glass-effect rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Methodology</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  {paper.methodology}
-                </p>
-              </div>
-            )}
-
-            {/* Key Findings Section - Only show if data is available */}
-            {paper.keyFindings && (
-              <div className="glass-effect rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Key Findings</h3>
-                <div className="space-y-3">
-                  {Array.isArray(paper.keyFindings) ? (
-                    paper.keyFindings.map((finding, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-300">{finding}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-300 leading-relaxed">{paper.keyFindings}</p>
+                <h3 className="text-lg font-semibold text-white mb-4">Results and Discussion</h3>
+                <div className="relative">
+                  <p className={`text-gray-300 leading-relaxed ${
+                    !isResultsExpanded && paper['Results and Discussion'].length > 500 ? 'line-clamp-6' : ''
+                  }`}>
+                    {paper['Results and Discussion']}
+                  </p>
+                  {paper['Results and Discussion'].length > 500 && (
+                    <button
+                      onClick={() => setIsResultsExpanded(!isResultsExpanded)}
+                      className="mt-3 flex items-center space-x-1 text-cosmic-300 hover:text-cosmic-200 transition-colors duration-200 text-sm"
+                    >
+                      {isResultsExpanded ? (
+                        <>
+                          <ChevronUp className="h-4 w-4" />
+                          <span>Show less</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4" />
+                          <span>Read more</span>
+                        </>
+                      )}
+                    </button>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Implications Section - Only show if data is available */}
-            {paper.implications && (
+            {/* Conclusions Section - Only show if data is available */}
+            {paper.Conclusions != "Not Found" && paper.Conclusions.trim() && (
               <div className="glass-effect rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Implications</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  {paper.implications}
-                </p>
+                <h3 className="text-lg font-semibold text-white mb-4">Conclusions</h3>
+                <div className="relative">
+                  <p className={`text-gray-300 leading-relaxed ${
+                    !isConclusionsExpanded && paper.Conclusions.length > 500 ? 'line-clamp-6' : ''
+                  }`}>
+                    {paper.Conclusions} aziz
+                  </p>
+                  {paper.Conclusions.length > 500 && (
+                    <button
+                      onClick={() => setIsConclusionsExpanded(!isConclusionsExpanded)}
+                      className="mt-3 flex items-center space-x-1 text-cosmic-300 hover:text-cosmic-200 transition-colors duration-200 text-sm"
+                    >
+                      {isConclusionsExpanded ? (
+                        <>
+                          <ChevronUp className="h-4 w-4" />
+                          <span>Show less</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4" />
+                          <span>Read more</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Research Context Section - Only show if data is available */}
-            {paper.researchContext && (
-              <div className="glass-effect rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Research Context</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  {paper.researchContext}
-                </p>
-              </div>
-            )}
-
-            {/* Future Work Section - Only show if data is available */}
-            {paper.futureWork && (
-              <div className="glass-effect rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Future Work</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  {paper.futureWork}
-                </p>
-              </div>
-            )}
           </div>
         )}
 
@@ -321,11 +360,11 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">AI Summary</h3>
                 <button
-                  onClick={() => onGenerateAISummary && onGenerateAISummary(paper)}
-                  disabled={isGeneratingAI}
+                  onClick={handleGenerateAISummary}
+                  disabled={isGeneratingSummary}
                   className="space-button text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isGeneratingAI ? (
+                  {isGeneratingSummary ? (
                     <>
                       <Loader className="h-4 w-4 animate-spin mr-2" />
                       Generating...
@@ -338,11 +377,10 @@ const PaperDetails = ({ paper, onGenerateAISummary, isGeneratingAI }) => {
                   )}
                 </button>
               </div>
-              
               <div className="bg-gradient-to-br from-cosmic-900/30 to-space-900/30 rounded-lg p-4 border border-cosmic-500/30 min-h-[200px]">
-                {paper.aiSummary ? (
+                {aiSummary ? (
                   <p className="text-gray-300 leading-relaxed">
-                    {paper.aiSummary}
+                    {aiSummary}
                   </p>
                 ) : (
                   <div className="flex items-center justify-center h-full min-h-[150px]">

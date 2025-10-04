@@ -13,6 +13,7 @@ function App() {
   const [filteredPublications, setFilteredPublications] = useState([]);
   const [selectedPaper, setSelectedPaper] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSuggested, setIsLoadingSuggested] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [knowledgeGraphData, setKnowledgeGraphData] = useState(null);
@@ -76,6 +77,7 @@ function App() {
 
   // Load suggested articles for normal state
   const loadSuggestedArticles = async () => {
+    setIsLoadingSuggested(true);
     try {
       const response = await ApiService.getSuggestedArticles();
       if (response.success) {
@@ -88,6 +90,8 @@ function App() {
     } catch (error) {
       console.error('Error loading suggested articles:', error);
       setFilteredPublications(mockPublications.slice(0, 5));
+    } finally {
+      setIsLoadingSuggested(false);
     }
   };
 
@@ -170,7 +174,7 @@ function App() {
         console.error('Failed to generate AI summary:', response.error);
       }
     } catch (error) {
-      console.error('Error generating AI summary:', error);
+      console.error('Error generating AI summar//', error);
     } finally {
       setIsGeneratingAI(false);
     }
@@ -225,6 +229,7 @@ function App() {
               selectedPaper={selectedPaper}
               setSelectedPaper={handlePaperSelect}
               isLoading={isLoading}
+              isLoadingSuggested={isLoadingSuggested}
               isSearchMode={isSearchMode}
               selectedEntity={selectedEntity}
               searchQuery={searchQuery}

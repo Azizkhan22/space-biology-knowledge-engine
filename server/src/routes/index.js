@@ -1,14 +1,18 @@
 const express = require('express');
-const IndexController = require('../controllers/index').IndexController;
-
-const router = express.Router();
-const indexController = new IndexController();
+const articleRoutes = require('./articleRoutes');
 
 function setRoutes(app) {
-    router.get('/data', indexController.getData.bind(indexController));
-    router.post('/data', indexController.postData.bind(indexController));
-    
-    app.use('/api', router);
+    // Health check endpoint
+    app.get('/api/health', (req, res) => {
+        res.json({
+            success: true,
+            message: 'Space Biology Knowledge Engine API is running',
+            timestamp: new Date().toISOString()
+        });
+    });
+
+    // API routes
+    app.use('/api/articles', articleRoutes);    
 }
 
-module.exports = setRoutes;
+module.exports = { setRoutes };

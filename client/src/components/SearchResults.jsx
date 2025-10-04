@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Eye, Calendar, Users, Tag, ChevronDown, Filter, Loader } from 'lucide-react';
 
-const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoading, isSearchMode, selectedEntity, searchQuery }) => {
+const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoading, isLoadingSuggested, isSearchMode, selectedEntity, searchQuery }) => {
   const [sortBy, setSortBy] = useState('relevance');
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -40,7 +40,7 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
 
   const displayInfo = getDisplayInfo();
 
-  if (isLoading) {
+  if (isLoading || isLoadingSuggested) {
     return (
       <div className="h-full flex flex-col content-update">
         {/* Header */}
@@ -67,9 +67,10 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
             <Loader className="h-8 w-8 animate-spin text-cosmic-400 mb-2" />
           </div>
           <p className="text-gray-400 text-center">
-            {isSearchMode ? 'Searching publications...' :
-              selectedEntity ? 'Loading related articles...' :
-                'Loading suggested articles...'}
+            {isLoading && isSearchMode ? 'Searching publications...' :
+              isLoading && selectedEntity ? 'Loading related articles...' :
+                isLoadingSuggested ? 'Loading suggested articles...' :
+                  'Loading...'}
           </p>
         </div>
       </div>
@@ -95,29 +96,6 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
             </p>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setFilterOpen(!filterOpen)}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
-            >
-              <Filter className="h-4 w-4 text-gray-400" />
-            </button>
-
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white/10 border border-white/20 rounded-lg px-3 py-2 pr-8 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cosmic-500/50"
-              >
-                {sortOptions.map(option => (
-                  <option key={option.value} value={option.value} className="bg-space-800">
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
         </div>
 
         {/* Filter Panel */}
@@ -174,28 +152,28 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
             >
               <div className="mb-3">
                 <h3 className="font-semibold text-white text-sm leading-tight mb-2">
-                  {paper.title}
+                  {paper.Title}
                 </h3>
 
                 <div className="flex items-center space-x-4 text-xs text-gray-400 mb-3">
                   <div className="flex items-center space-x-1">
                     <Calendar className="h-3 w-3" />
-                    <span>{paper.year}</span>
+                    <span>{new Date(paper.PublishedDate).getFullYear()}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Users className="h-3 w-3" />
-                    <span>{paper.authors.length} authors</span>
+                    <span>{paper.Authors?.length || 0} authors</span>
                   </div>                  
                 </div>
               </div>
 
               <p className="text-gray-300 text-xs leading-relaxed mb-4 line-clamp-3">
-                {paper.aiSummary}
+                {paper.Abstract}
               </p>
 
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap gap-1">
-                  {paper.tags.slice(0, 3).map((tag, index) => (
+                  {paper.tags?.slice(0, 3).map((tag, index) => (
                     <span
                       key={index}
                       className="px-2 py-1 text-xs bg-gradient-to-r from-cosmic-600/30 to-space-600/30 text-cosmic-200 rounded-full border border-cosmic-500/30"
@@ -203,7 +181,7 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
                       {tag}
                     </span>
                   ))}
-                  {paper.tags.length > 3 && (
+                  {paper.tags?.length > 3 && (
                     <span className="px-2 py-1 text-xs text-gray-400 rounded-full">
                       +{paper.tags.length - 3}
                     </span>
