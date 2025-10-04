@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Info } from 'lucide-react';
-import { mockGraphData } from '../data/mockData';
 
 // Register the dagre layout
 cytoscape.use(dagre);
@@ -17,7 +16,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
   // Enhanced color mapping for different categories
   const categoryColors = {
     biology: '#10b981',
-    health: '#ef4444', 
+    health: '#ef4444',
     physics: '#3b82f6',
     psychology: '#a855f7',
     medicine: '#ec4899',
@@ -28,20 +27,27 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
   };
 
   // Use provided graphData or fallback to mock data
-  const currentGraphData = graphData || mockGraphData;
+  const currentGraphData = graphData;
+
+  // Helper: check if graphData is ready
+  const isGraphDataReady = currentGraphData && (
+    (Array.isArray(currentGraphData.entities) && currentGraphData.entities.length > 0) ||
+    (Array.isArray(currentGraphData.nodes) && currentGraphData.nodes.length > 0)
+  );
 
   useEffect(() => {
+    if (!isGraphDataReady) return; // Prevent Cytoscape init if no data
     if (!containerRef.current) return;
 
     // Create cytoscape instance with dynamic data
     const elements = [];
-    
+
     // Add nodes (entities)
     if (currentGraphData.entities || currentGraphData.nodes) {
       const nodes = currentGraphData.entities || currentGraphData.nodes;
       elements.push(...nodes.map(node => ({
-        data: { 
-          id: node.id, 
+        data: {
+          id: node.id,
           label: node.label,
           category: node.category,
           size: node.size || 30,
@@ -51,14 +57,15 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
     }
 
     // Add edges (relations)
+    // Add edges (relations)
     if (currentGraphData.relations || currentGraphData.edges) {
       const edges = currentGraphData.relations || currentGraphData.edges;
-      elements.push(...edges.map(edge => ({
-        data: { 
-          id: edge.id, 
-          source: edge.source, 
+      elements.push(...edges.map((edge, index) => ({
+        data: {
+          id: `edge-${edge.source}-${edge.target}-${index}`, // ✅ unique id for each edge
+          source: edge.source,
           target: edge.target,
-          weight: edge.weight || edge.strength || 0.5,
+          weight: edge.weight || 1, // ensure width > 0
           type: edge.type || 'relates'
         }
       })));
@@ -178,10 +185,11 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         }
       ],
       layout: {
-        name: 'dagre',
+        name: 'cose',
         directed: true,
         padding: 50,
-        spacingFactor: 1.5,
+        spacingFactor: 2,
+        nodeRepulsion: 16000,
         rankDir: 'TB',
         ranker: 'tight-tree',
         animate: true,
@@ -202,14 +210,14 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         connections: node.connectedEdges().length,
         articleCount: node.data('articleCount') || 0
       };
-      
+
       setSelectedNode(nodeData);
-      
+
       // Call the entity click handler to load related articles
       if (onEntityClick) {
         onEntityClick(nodeData);
       }
-      
+
       // Highlight connected nodes and edges
       cytoscapeInstance.elements().removeClass('highlighted');
       node.addClass('highlighted');
@@ -237,7 +245,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         cytoscapeInstance.destroy();
       }
     };
-  }, [currentGraphData]);
+  }, [currentGraphData, isGraphDataReady]);
 
   // Highlight selected entity when it changes
   useEffect(() => {
@@ -290,7 +298,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
       <div className="p-4 border-b border-white/10">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-white">Knowledge Graph</h2>
-          
+
           <div className="flex items-center space-x-2">
             <button
               onClick={handleZoomIn}
@@ -299,7 +307,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
             >
               <ZoomIn className="h-4 w-4 text-gray-400" />
             </button>
-            
+
             <button
               onClick={handleZoomOut}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
@@ -307,7 +315,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
             >
               <ZoomOut className="h-4 w-4 text-gray-400" />
             </button>
-            
+
             <button
               onClick={handleReset}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
@@ -315,7 +323,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
             >
               <RotateCcw className="h-4 w-4 text-gray-400" />
             </button>
-            
+
             <button
               onClick={handleFullscreen}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
@@ -330,7 +338,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         <div className="flex flex-wrap gap-2 text-xs">
           {Object.entries(categoryColors).slice(0, 5).map(([category, color]) => (
             <div key={category} className="flex items-center space-x-1">
-              <div 
+              <div
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: color }}
               ></div>
@@ -343,13 +351,28 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
 
       {/* Graph Container */}
       <div className="flex-1 relative">
-        <div 
-          ref={containerRef} 
-          className="w-full h-full bg-gradient-to-br from-space-900/50 to-cosmic-900/30"
-          style={{ minHeight: '400px',maxHeight: '600px' }}
-        />
-        
-
+        {/* Loader overlay */}
+        {!isGraphDataReady && (
+          <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/60">
+            <div className="flex flex-col items-center">
+              <div className="loader mb-2" style={{ width: 48, height: 48 }}>
+                <svg className="animate-spin" viewBox="0 0 50 50">
+                  <circle className="opacity-25" cx="25" cy="25" r="20" fill="none" stroke="#6366f1" strokeWidth="6" />
+                  <path className="opacity-75" fill="#d946ef" d="M25 5a20 20 0 0 1 0 40V5z" />
+                </svg>
+              </div>
+              <span className="text-white text-sm">Loading Knowledge Graph...</span>
+            </div>
+          </div>
+        )}
+        {/* Cytoscape container only if data is ready */}
+        {isGraphDataReady && (
+          <div
+            ref={containerRef}
+            className="w-full h-full bg-gradient-to-br from-space-900/50 to-cosmic-900/30"
+            style={{ minHeight: '400px', maxHeight: '600px' }}
+          />
+        )}
         {/* Instructions */}
         <div className="absolute bottom-4 right-4 glass-effect rounded-lg p-3">
           <p className="text-xs text-gray-400">

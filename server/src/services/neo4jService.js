@@ -25,7 +25,7 @@ async function getTopEntitiesWithRelations(limit = 40) {
       console.log(`🔍 [Neo4j] Fetching knowledge graph data (limit: ${limit})...`);
   
       const cypher = `
-        // Step 1: Get top entities (non-articles) by relationship count
+        // Step 1: Get top non-article entities by relationship count
         MATCH (e)
         WHERE NOT e:Article
         WITH e, COUNT { (e)--() } AS relCount
@@ -33,14 +33,13 @@ async function getTopEntitiesWithRelations(limit = 40) {
         LIMIT $limit
         WITH collect(e) AS topEntities
   
-        // Step 2: Get relations among top entities and their connected articles
+        // Step 2: Get entity-to-entity relations and related articles
         UNWIND topEntities AS e
         OPTIONAL MATCH (e)-[r]-(n)
-        WHERE (n:Article OR n IN topEntities)
+        WHERE (n:Article OR (NOT n:Article AND n IN topEntities))
         RETURN e, n AS relatedNode, r
       `;
   
-      // ✅ FIXED: wrap limit as Neo4j integer
       const result = await session.run(cypher, { limit: neo4j.int(limit) });
   
       const entitiesMap = new Map();
@@ -57,43 +56,62 @@ async function getTopEntitiesWithRelations(limit = 40) {
         const eId = e.identity.toString();
         const relatedId = relatedNode.identity.toString();
   
-        // Add nodes
-        [e, relatedNode].forEach(node => {
-          const id = node.identity.toString();
-          if (!entitiesMap.has(id)) {
-            entitiesMap.set(id, {
-              id,
-              label:
-                node.properties.title ||
-                node.properties.name ||
-                node.properties.label ||
-                node.labels[0] ||
-                'Entity',
-              type: node.labels[0],
-              ...node.properties
-            });
-          }
-        });
+        // Skip adding articles to the main graph
+        const isArticle = relatedNode.labels.includes('Article');
   
-        // Add relation
-        relations.push({
-          source: eId,
-          target: relatedId,
-          weight: r.properties?.weight || 1,
-          type: r.type
-        });
+        // ✅ Add entity node (non-article)
+        if (!entitiesMap.has(eId)) {
+          entitiesMap.set(eId, {
+            id: eId,
+            label:
+              e.properties.title ||
+              e.properties.name ||
+              e.properties.label ||
+              e.labels[0] ||
+              'Entity',
+            type: e.labels[0],
+            ...e.properties,
+            articleIds: [] // attach here directly too
+          });
+        }
   
-        // If related node is an article, map it
-        if (relatedNode.labels.includes('Article')) {
+        // ✅ If related node is an article, map it to the entity only
+        if (isArticle) {
           if (!entityArticlesMap[eId]) entityArticlesMap[eId] = [];
           entityArticlesMap[eId].push({
             id: relatedId,
             title: relatedNode.properties.title || 'Untitled Article',
             ...relatedNode.properties
           });
+          entitiesMap.get(eId).articleIds.push(relatedId);
+          continue; // don't add article nodes or edges
         }
+  
+        // ✅ Add the related entity node (if also not an article)
+        if (!entitiesMap.has(relatedId)) {
+          entitiesMap.set(relatedId, {
+            id: relatedId,
+            label:
+              relatedNode.properties.title ||
+              relatedNode.properties.name ||
+              relatedNode.properties.label ||
+              relatedNode.labels[0] ||
+              'Entity',
+            type: relatedNode.labels[0],
+            ...relatedNode.properties,
+            articleIds: []
+          });
+        }
+  
+        // ✅ Add relation between two entities
+        relations.push({
+          source: eId,
+          target: relatedId,
+          weight: r.properties?.weight || 1,
+          type: r.type
+        });
       }
-      
+  
       return {
         entities: Array.from(entitiesMap.values()),
         relations,
@@ -106,6 +124,10 @@ async function getTopEntitiesWithRelations(limit = 40) {
       await session.close();
     }
   }
+  
+  
+  
+  
   
   
 

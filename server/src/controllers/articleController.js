@@ -191,7 +191,7 @@ class ArticleController {
         .limit(limit)
         .select('-__v')
         .lean();
-              
+
       res.json({
         success: true,
         data: articles
@@ -372,33 +372,43 @@ class ArticleController {
   async getKnowledgeGraph(req, res) {
     try {
       const limit = 40;
-  
       console.log(`🔍 [Neo4j] Fetching knowledge graph data (limit: ${limit})...`);
   
-      // Import your Neo4j service
       const { getTopEntitiesWithRelations } = require('../services/neo4jService');
   
-      // Get entities, relations, and related articles from Neo4j
+      // Get entities, relations, and related articles
       const { entities, relations, entityArticlesMap } = await getTopEntitiesWithRelations(limit);
   
       console.log(`✅ [Neo4j] Retrieved ${entities.length} entities and ${relations.length} relations.`);
-      
-      // Optionally log one sample for debug
-      if (entities.length > 0) {
-        console.log(`📊 [Sample Entity] ${entities[0].label} (${entities[0].type})`);
-        if (entityArticlesMap[entities[0].id]) {
-          console.log(`📰 [Related Articles Count] ${entityArticlesMap[entities[0].id].length}`);
-        }
-      }
   
-      // Return in frontend-friendly format
+      // --- Normalize IDs and attach article IDs
+      const normalizedEntities = entities.map(e => ({
+        ...e,
+        id: String(e.id),
+        articleIds: entityArticlesMap[String(e.id)] || []
+      }));
+  
+      const validIds = new Set(normalizedEntities.map(e => e.id));
+  
+      // --- Filter valid relations (avoid orphan edges)
+      const filteredRelations = relations
+        .map(r => ({
+          id: String(r.id),
+          source: String(r.source),
+          target: String(r.target),
+          type: r.type || 'RELATED_TO'
+        }))
+        .filter(r => validIds.has(r.source) && validIds.has(r.target));
+  
+      console.log(`📡 Cleaned Graph: ${normalizedEntities.length} entities, ${filteredRelations.length} valid relations.`);
+  
+      // --- Send only entities + relations (no article nodes)      
       return res.status(200).json({
         success: true,
-        message: `Fetched ${entities.length} entities and ${relations.length} relations from Neo4j.`,
+        message: `Fetched ${normalizedEntities.length} entities and ${filteredRelations.length} relations from Neo4j.`,
         data: {
-          entities,
-          relations,
-          entityArticlesMap
+          entities: normalizedEntities,
+          relations: filteredRelations
         }
       });
   
@@ -412,6 +422,7 @@ class ArticleController {
     }
   }
   
+
 
   // Helper method to categorize authors
   categorizeTopic(author) {

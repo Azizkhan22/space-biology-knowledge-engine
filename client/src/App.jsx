@@ -5,7 +5,6 @@ import KnowledgeGraph from './components/KnowledgeGraph';
 import PaperDetails from './components/PaperDetails';
 import Footer from './components/Footer';
 import SpaceBackground from './components/SpaceBackground';
-import { mockPublications } from './data/mockData';
 import ApiService from './services/api';
 
 function App() {
