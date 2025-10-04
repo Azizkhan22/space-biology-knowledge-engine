@@ -93,7 +93,7 @@ async function getTopEntitiesWithRelations(limit = 40) {
           });
         }
       }
-  
+      
       return {
         entities: Array.from(entitiesMap.values()),
         relations,
