@@ -23,7 +23,7 @@ const Footer = () => {
           {/* Navigation Links */}
           <div className="flex items-center space-x-6">
             <a
-              href="#about"
+              href="https://www.spaceappschallenge.org/2025/challenges/build-a-space-biology-knowledge"
               className="text-sm text-gray-400 hover:text-white transition-colors duration-200 flex items-center space-x-1"
             >
               <span>About</span>

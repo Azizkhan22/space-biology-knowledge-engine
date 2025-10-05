@@ -55,9 +55,9 @@ const Navigation = ({ searchQuery, setSearchQuery, onSearch }) => {
 
           {/* Navigation Links - Desktop */}
           <div className="hidden md:flex items-center space-x-6">
-            <button className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">
+            <a href='https://www.spaceappschallenge.org/2025/challenges/build-a-space-biology-knowledge-engine/' className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">
               About
-            </button>
+            </a>
             <button className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">
               Team
             </button>
@@ -69,7 +69,7 @@ const Navigation = ({ searchQuery, setSearchQuery, onSearch }) => {
           {/* Mobile menu button */}
           <div className="md:hidden">
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              //onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors duration-200"
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}

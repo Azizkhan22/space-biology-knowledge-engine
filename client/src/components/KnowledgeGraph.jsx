@@ -52,7 +52,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
           category: node.category,
           size: node.size || 30,
           articleCount: node.articleCount || 0,
-          articleIds: node.articleIds || [] 
+          articleIds: node.articleIds || []
         }
       })));
     }
@@ -338,17 +338,27 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
 
         {/* Legend */}
         <div className="flex flex-wrap gap-2 text-xs">
-          {Object.entries(categoryColors).slice(0, 5).map(([category, color]) => (
-            <div key={category} className="flex items-center space-x-1">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: color }}
-              ></div>
-              <span className="text-gray-400 capitalize">{category}</span>
-            </div>
-          ))}
-          <span className="text-gray-500">+more</span>
+          {currentGraphData && (currentGraphData.entities || currentGraphData.nodes)?.length > 0 ? (
+            (currentGraphData.entities || currentGraphData.nodes)
+              .slice(0, 5)
+              .map((node) => (
+                <div key={node.id} className="flex items-center space-x-1">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: categoryColors[node.category] || '#6366f1' }}
+                  ></div>
+                  <span className="text-gray-400 capitalize">{node.label}</span>
+                </div>
+              ))
+          ) : (
+            <span className="text-gray-400">Loading...</span>
+          )}
+          {currentGraphData && (currentGraphData.entities || currentGraphData.nodes)?.length > 5 && (
+            <span className="text-gray-500">+more</span>
+          )}
         </div>
+
+
       </div>
 
       {/* Graph Container */}
