@@ -123,7 +123,7 @@ class ArticleController {
       }
 
       const { query } = req.body;
-      const limit = 5;
+      const limit = 100;
 
       console.log(`🔍 [Search] Query: "${query}", Limit: ${limit}`);
 

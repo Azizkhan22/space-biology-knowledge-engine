@@ -27,7 +27,7 @@ class SearchService {
     return Array.isArray(response[0]) ? response[0] : response;
   }
 
-  async searchArticles(query, limit = 5) {
+  async searchArticles(query, limit = 500) {
     const queryVector = await this.getEmbedding(query);
 
     // MongoDB $vectorSearch pipeline
@@ -37,7 +37,7 @@ class SearchService {
           index: this.indexName,
           path: "embedding",
           queryVector,
-          numCandidates: 100,
+          numCandidates: 1000,
           limit,
         },
       },
