@@ -1,14 +1,18 @@
-class IndexController {
-    getData(req, res) {
-        // Logic to fetch data
-        res.json({ message: "Data fetched successfully" });
-    }
+const express = require('express');
+const articleRoutes = require('./articleRoutes');
 
-    postData(req, res) {
-        // Logic to handle data submission
-        const data = req.body;
-        res.json({ message: "Data submitted successfully", data });
-    }
+function setRoutes(app) {
+    // Health check endpoint
+    app.get('/api/health', (req, res) => {
+        res.json({
+            success: true,
+            message: 'Space Biology Knowledge Engine API is running',
+            timestamp: new Date().toISOString()
+        });
+    });
+
+    // API routes
+    app.use('/api/articles', articleRoutes);    
 }
 
-module.exports = IndexController;
+module.exports = { setRoutes };

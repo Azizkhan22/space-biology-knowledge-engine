@@ -49,49 +49,50 @@ class ArticleController {
   }
 
   // Get article by ID with full details
-  async getArticleById(req, res) {
-    try {
-      const { id } = req.params;
+  async getArticlesByIds(req, res) {
+  try {
+    const articlesArray = req.body; // expect array of {id, title} objects
+    console.log('🔍 [DB Query] Received articles array:', articlesArray);
 
-      console.log(`🔍 [DB Query] Fetching article by ID: ${id}`);
-
-      if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-        console.log(`❌ [DB Error] Invalid article ID format: ${id}`);
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid article ID format'
-        });
-      }
-
-      const article = await Article.findById(id)
-        .select('-__v')
-        .lean();
-
-      if (article) {
-        console.log(`✅ [DB Result] Article found: ${article.Title} by ${article.Authors?.join(', ')}`);
-      } else {
-        console.log(`⚠️ [DB Warning] Article not found with ID: ${id}`);
-      }
-
-      if (!article) {
-        return res.status(404).json({
-          success: false,
-          error: 'Article not found'
-        });
-      }
-
-      res.json({
-        success: true,
-        data: article
-      });
-    } catch (error) {
-      console.error('Error fetching article by ID:', error);
-      res.status(500).json({
+    if (!Array.isArray(articlesArray) || articlesArray.length === 0) {
+      return res.status(400).json({
         success: false,
-        error: 'Failed to fetch article'
+        error: 'Request body must be a non-empty array of articles'
       });
     }
+
+    // Extract IDs and validate
+    const validIds = articlesArray
+      .map(a => a.id)
+      .filter(id => /^[0-9a-fA-F]{24}$/.test(id));
+
+    if (validIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No valid article IDs provided'
+      });
+    }
+
+    // Fetch articles from DB
+    const articles = await Article.find({ _id: { $in: validIds } })
+      .select('-__v')
+      .lean();
+
+    console.log(`✅ [DB Result] Found ${articles.length} articles`);
+
+    res.json({
+      success: true,
+      data: articles
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching articles by IDs:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch articles'
+    });
   }
+}
 
   // Search articles
   async searchArticles(req, res) {
