@@ -14,3 +14,4 @@ jobs:
         run: |
           echo "Pinging Space Biology Knowledge Engine API..."
           curl -s -o /dev/null -w "Response code: %{http_code}\n" https://fb24d8a8-79f6-4df3-bcbb-0599559bba32-00-3361tn4h34gry.sisko.replit.dev/api/health
+              
