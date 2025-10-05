@@ -1,6 +1,23 @@
 const Article = require('../models/Article');
 const AIService = require('../services/aiService');
+const SearchService = require('../services/searchService');
 const { validationResult } = require('express-validator');
+
+// Initialize SearchService
+const searchService = new SearchService({
+  mongoUri: process.env.MONGODB_URI,
+  dbName: process.env.DB_NAME
+});
+
+// Initialize SearchService when the controller is loaded
+(async () => {
+  try {
+    await searchService.init();
+    console.log('✅ SearchService initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize SearchService:', error);
+  }
+})();
 
 class ArticleController {
   // Get latest articles (20 articles based on latest date)
@@ -106,69 +123,24 @@ class ArticleController {
         });
       }
 
-      const { query, filters = {} } = req.body;
-      const limit = parseInt(req.query.limit) || 20;
-      const page = parseInt(req.query.page) || 1;
-      const skip = (page - 1) * limit;
+      const { query } = req.body;
+      const limit = 100;
 
-      console.log(`🔍 [DB Query] Searching articles - Query: "${query}", Filters:`, filters, `Page: ${page}, Limit: ${limit}`);
+      console.log(`🔍 [Search] Query: "${query}", Limit: ${limit}`);
 
-      let searchQuery = {};
+      // Use the SearchService for semantic search
+      const semanticResults = await searchService.searchArticles(query, limit);
 
-      // Text search
-      if (query && query.trim()) {
-        searchQuery.$text = { $search: query.trim() };
-        console.log(`📝 [DB Query] Text search enabled for: "${query.trim()}"`);
-      }
-
-      // Apply filters
-      if (filters.year) {
-        const year = parseInt(filters.year);
-        const startDate = new Date(year, 0, 1);
-        const endDate = new Date(year + 1, 0, 1);
-        searchQuery.PublishedDate = { $gte: startDate, $lt: endDate };
-        console.log(`📅 [DB Query] Year filter applied: ${year}`);
-      }
-
-      if (filters.authors && filters.authors.length > 0) {
-        searchQuery.Authors = { $in: filters.authors };
-        console.log(`👥 [DB Query] Authors filter applied:`, filters.authors);
-      }
-
-      if (filters.numAuthors) {
-        searchQuery.NumAuthors = parseInt(filters.numAuthors);
-        console.log(`🔢 [DB Query] Number of authors filter applied: ${filters.numAuthors}`);
-      }
-
-      console.log(`🔍 [DB Query] Final search query:`, JSON.stringify(searchQuery, null, 2));
-
-      const articles = await Article.find(searchQuery)
-        .sort({ score: { $meta: 'textScore' }, PublishedDate: -1 })
-        .limit(limit)
-        .skip(skip)
-        .select('-__v')
-        .lean();
-
-      const total = await Article.countDocuments(searchQuery);
-      
-      console.log(`✅ [DB Result] Search completed - Found ${articles.length} articles out of ${total} total matches`);
-      if (articles.length > 0) {
-        console.log(`📄 [DB Data] First result: ${articles[0].Title} by ${articles[0].Authors?.join(', ')}`);
-      } else {
-        console.log(`⚠️ [DB Warning] No articles found matching search criteria`);
-      }
+      console.log(`✅ [Search] Found ${semanticResults.length} relevant articles`);
 
       res.json({
         success: true,
-        data: articles,
+        data: semanticResults,
         query: query,
-        filters: filters,
         pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(total / limit),
-          totalResults: total,
-          hasNextPage: page < Math.ceil(total / limit),
-          hasPrevPage: page > 1
+          currentPage: 1,
+          totalResults: semanticResults.length,
+          limit
         }
       });
     } catch (error) {
