@@ -51,7 +51,8 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
           label: node.label,
           category: node.category,
           size: node.size || 30,
-          articleCount: node.articleCount || 0
+          articleCount: node.articleCount || 0,
+          articleIds: node.articleIds || [] 
         }
       })));
     }
@@ -208,7 +209,8 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         label: node.data('label'),
         category: node.data('category'),
         connections: node.connectedEdges().length,
-        articleCount: node.data('articleCount') || 0
+        articleCount: node.data('articleCount') || 0,
+        articleIds: node.data('articleIds') || []
       };
 
       setSelectedNode(nodeData);

@@ -113,9 +113,9 @@ function App() {
     setSelectedEntity(entity);
     setIsSearchMode(false);
     setIsLoading(true);
-    
+    console.log(entity.articleIds);
     try {
-      const response = await ApiService.getArticlesByEntity(entity.id, entity.label);
+      const response = await ApiService.getArticlesByIds(entity.articleIds);      
       if (response.success) {
         setFilteredPublications(response.data);
       } else {

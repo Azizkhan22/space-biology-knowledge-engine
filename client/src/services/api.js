@@ -47,9 +47,9 @@ export class ApiService {
     try {
       const response = await fetch(`${API_BASE_URL}/articles/knowledge-graph`);
       const data = await response.json();
-      console.log(data);
+      console.log(data.data.entities);
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch knowledge graph');
+        throw new Error(data.error ||   'Failed to fetch knowledge graph');
       }
       
       return data;
@@ -60,21 +60,33 @@ export class ApiService {
   }
 
   // Get articles related to a specific entity/topic
-  static async getArticlesByEntity(entityId, entityLabel) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/articles/topic/${encodeURIComponent(entityLabel)}`);
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch articles by entity');
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Error fetching articles by entity:', error);
-      return { success: false, error: error.message };
+  static async getArticlesByIds(articleIds) {
+  try {
+    if (!Array.isArray(articleIds) || articleIds.length === 0) {
+      return { success: true, data: [] }; // no articles
     }
+
+    const response = await fetch(`${API_BASE_URL}/articles/byIds`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(articleIds) // <-- send array directly
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch articles by IDs');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching articles by IDs:', error);
+    return { success: false, error: error.message };
   }
+}
+
 
   // Generate AI summary for an article
   static async generateAISummary(articleId, articleData) {
