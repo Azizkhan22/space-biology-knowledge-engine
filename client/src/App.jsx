@@ -17,12 +17,10 @@ function App() {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [knowledgeGraphData, setKnowledgeGraphData] = useState(null);
   const [selectedEntity, setSelectedEntity] = useState(null);
-
-  // Refs for smooth scrolling
+  
   const paperDetailsRef = useRef(null);
   const searchResultsRef = useRef(null);
 
-  // Smooth scroll helper function
   const smoothScrollTo = useCallback((element, offset = 0) => {
     if (!element) return;
     
@@ -34,25 +32,21 @@ function App() {
       behavior: 'smooth'
     });
   }, []);
-
-  // Check if screen is mobile or tablet
+  
   const isMobileOrTablet = useCallback(() => {
-    return window.innerWidth < 1024; // lg breakpoint in Tailwind
+    return window.innerWidth < 1024; 
   }, []);
-
-  // Handle search functionality
+  
   const handleSearch = async (query) => {
     setIsLoading(true);
     setIsSearchMode(true);
     setSelectedEntity(null);
     
     try {
-      if (!query.trim()) {
-        // If empty query, load suggested articles
+      if (!query.trim()) {        
         setIsSearchMode(false);
         await loadSuggestedArticles();
-      } else {
-        // Search for articles using API
+      } else {        
         const response = await ApiService.searchArticles(query);
         if (response.success) {
           setFilteredPublications(response.data);
@@ -67,14 +61,12 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-
-    // Scroll to search results panel on mobile/tablet when searching
+    
     if (query.trim() && isMobileOrTablet() && searchResultsRef.current) {
       smoothScrollTo(searchResultsRef.current, 80);
     }
   };
 
-  // Load suggested articles for normal state
   const loadSuggestedArticles = async () => {
     setIsLoadingSuggested(true);
     try {
@@ -82,8 +74,7 @@ function App() {
       if (response.success) {
         setFilteredPublications(response.data);
       } else {
-        console.error('Failed to load suggested articles:', response.error);
-        // Fallback to mock data
+        console.error('Failed to load suggested articles:', response.error);        
         setFilteredPublications(mockPublications.slice(0, 5));
       }
     } catch (error) {
@@ -93,8 +84,7 @@ function App() {
       setIsLoadingSuggested(false);
     }
   };
-
-  // Load knowledge graph data
+  
   const loadKnowledgeGraph = async () => {
     try {
       const response = await ApiService.getKnowledgeGraph();
@@ -107,8 +97,7 @@ function App() {
       console.error('Error loading knowledge graph:', error);
     }
   };
-
-  // Handle entity click in knowledge graph
+  
   const handleEntityClick = useCallback(async (entity) => {
     setSelectedEntity(entity);
     setIsSearchMode(false);
@@ -128,42 +117,36 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-
-    // Scroll to search results panel on mobile/tablet
+  
     if (isMobileOrTablet() && searchResultsRef.current) {
       setTimeout(() => {
         smoothScrollTo(searchResultsRef.current, 80);
       }, 100);
     }
   }, [isMobileOrTablet, smoothScrollTo]);
-
-  // Handle paper selection with smooth scrolling
+  
   const handlePaperSelect = useCallback((paper) => {
     setSelectedPaper(paper);
-    
-    // Scroll to paper details panel on mobile/tablet
+      
     if (isMobileOrTablet() && paperDetailsRef.current) {
       setTimeout(() => {
         smoothScrollTo(paperDetailsRef.current, 80);
       }, 100);
     }
   }, [isMobileOrTablet, smoothScrollTo]);
-
-  // Handle AI summary generation
+  
   const handleGenerateAISummary = async (paper) => {
     setIsGeneratingAI(true);
     
     try {
       const response = await ApiService.generateAISummary(paper.id, paper);
       
-      if (response.success) {
-        // Update the paper with the new AI-generated summary
+      if (response.success) {        
         setSelectedPaper(prev => ({
           ...prev,
           aiSummary: response.data.summary
         }));
-        
-        // Also update in the filtered publications list
+                
         setFilteredPublications(prev => 
           prev.map(p => 
             p.id === paper.id ? { ...p, aiSummary: response.data.summary } : p
@@ -178,14 +161,12 @@ function App() {
       setIsGeneratingAI(false);
     }
   };
-
-  // Initialize app data
+  
   useEffect(() => {
     loadSuggestedArticles();
     loadKnowledgeGraph();
   }, []);
-
-  // Auto-select first paper when publications change
+  
   useEffect(() => {
     if (filteredPublications.length > 0 && !selectedPaper) {
       setSelectedPaper(filteredPublications[0]);

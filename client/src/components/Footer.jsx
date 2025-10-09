@@ -47,7 +47,7 @@ const Footer = () => {
             </a>
             
             <a
-              href="https://github.com"
+              href="https://github.com/Azizkhan22/space-biology-knowledge-engine"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-gray-400 hover:text-white transition-colors duration-200 flex items-center space-x-1"
@@ -64,18 +64,13 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
           <div className="text-xs text-gray-500">
-            © 2024 NASA BioSpace Knowledge Engine. Built for NASA Space Apps Challenge.
+            © 2025 NASA BioSpace Knowledge Engine. Built for NASA Space Apps Challenge.
           </div>
           
           <div className="flex items-center space-x-4 text-xs text-gray-500">
-            <span>Made with ❤️ for space exploration</span>
+            <span>Awarded 1st Place 🏆 at the Nasa Space Apss Challenge Hackathon.</span>
             <div className="flex items-center space-x-1">
-              <span>Powered by</span>
-              <span className="text-cosmic-400 font-semibold">React</span>
-              <span>•</span>
-              <span className="text-space-400 font-semibold">TailwindCSS</span>
-              <span>•</span>
-              <span className="text-purple-400 font-semibold">Cytoscape.js</span>
+              <span>Designed and Developed by Team DEIBYTE</span>              
             </div>
           </div>
         </div>

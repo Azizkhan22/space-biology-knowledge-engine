@@ -3,7 +3,6 @@ import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Info } from 'lucide-react';
 
-// Register the dagre layout
 cytoscape.use(dagre);
 
 const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick, selectedEntity }) => {
@@ -13,7 +12,6 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedNode, setSelectedNode] = useState(null);
 
-  // Enhanced color mapping for different categories
   const categoryColors = {
     biology: '#10b981',
     health: '#ef4444',
@@ -26,23 +24,19 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
     genetics: '#eab308'
   };
 
-  // Use provided graphData or fallback to mock data
   const currentGraphData = graphData;
 
-  // Helper: check if graphData is ready
   const isGraphDataReady = currentGraphData && (
     (Array.isArray(currentGraphData.entities) && currentGraphData.entities.length > 0) ||
     (Array.isArray(currentGraphData.nodes) && currentGraphData.nodes.length > 0)
   );
 
   useEffect(() => {
-    if (!isGraphDataReady) return; // Prevent Cytoscape init if no data
+    if (!isGraphDataReady) return; 
     if (!containerRef.current) return;
-
-    // Create cytoscape instance with dynamic data
+    
     const elements = [];
 
-    // Add nodes (entities)
     if (currentGraphData.entities || currentGraphData.nodes) {
       const nodes = currentGraphData.entities || currentGraphData.nodes;
       elements.push(...nodes.map(node => ({
@@ -58,15 +52,14 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
     }
 
     // Add edges (relations)
-    // Add edges (relations)
     if (currentGraphData.relations || currentGraphData.edges) {
       const edges = currentGraphData.relations || currentGraphData.edges;
       elements.push(...edges.map((edge, index) => ({
         data: {
-          id: `edge-${edge.source}-${edge.target}-${index}`, // ✅ unique id for each edge
+          id: `edge-${edge.source}-${edge.target}-${index}`, 
           source: edge.source,
           target: edge.target,
-          weight: edge.weight || 1, // ensure width > 0
+          weight: edge.weight || 1, 
           type: edge.type || 'relates'
         }
       })));
@@ -200,8 +193,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
       minZoom: 0.5,
       maxZoom: 4
     });
-
-    // Add event listeners
+    
     cytoscapeInstance.on('tap', 'node', (evt) => {
       const node = evt.target;
       const nodeData = {
@@ -214,13 +206,11 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
       };
 
       setSelectedNode(nodeData);
-
-      // Call the entity click handler to load related articles
+      
       if (onEntityClick) {
         onEntityClick(nodeData);
       }
 
-      // Highlight connected nodes and edges
       cytoscapeInstance.elements().removeClass('highlighted');
       node.addClass('highlighted');
       node.connectedEdges().addClass('highlighted');
@@ -234,7 +224,6 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
       }
     });
 
-    // Set better initial zoom and center
     cytoscapeInstance.fit();
     cytoscapeInstance.zoom(1.2);
     cytoscapeInstance.center();
@@ -249,14 +238,12 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
     };
   }, [currentGraphData, isGraphDataReady]);
 
-  // Highlight selected entity when it changes
   useEffect(() => {
     if (cy && selectedEntity) {
       cy.elements().removeClass('selected-entity');
       const node = cy.getElementById(selectedEntity.id);
       if (node.length > 0) {
         node.addClass('selected-entity');
-        // Removed: cy.center(node); // Do not recenter on click
       }
     }
   }, [cy, selectedEntity]);

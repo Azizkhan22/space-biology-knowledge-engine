@@ -1,9 +1,7 @@
 import { HfInference } from '@huggingface/inference';
 
-// Set your Hugging Face model here
 const MODEL = "mistralai/Mistral-7B-Instruct-v0.2"; 
 
-// Initialize Hugging Face Inference client
 const hf = new HfInference('');
 
 export async function askAI(context, question) {
@@ -21,17 +19,14 @@ If the answer is not in the context, reply:
 "The article does not provide this information."
     `;
 
-    // Log the request details for debugging
     console.log("=== AI Request Details ===");
     console.log("Model:", MODEL);
     console.log("Prompt:", prompt.substring(0, 200) + "...");
     console.log("=========================");
 
-    // Use Hugging Face Inference SDK
     let response;
     
     if (MODEL.includes('mistral') || MODEL.includes('dialo')) {
-      // Use chat completion for dialogue models
       response = await hf.chatCompletion({
         model: MODEL,
         messages: [
@@ -43,8 +38,7 @@ If the answer is not in the context, reply:
         max_tokens: 200,
         temperature: 0.7
       });
-    } else {
-      // Use text generation for other models
+    } else {      
       response = await hf.textGeneration({
         model: MODEL,
         inputs: prompt,
@@ -60,33 +54,26 @@ If the answer is not in the context, reply:
     console.log("=== AI Response ===");
     console.log("Response Data:", response);
     console.log("==================");
-
-    // Extract generated text from the SDK response
+    
     let output;
     
     if (MODEL.includes('mistral') || MODEL.includes('dialo')) {
-      // Chat completion API response format
       output = response.choices?.[0]?.message?.content;
-    } else {
-      // Text generation API response format
+    } else {      
       output = response.generated_text;
     }
-
-    // Clean up the output by removing the original prompt
+    
     const cleanedOutput = output?.replace(prompt, "").trim();
     
-    // Return cleaned output or fallback message
     return cleanedOutput || "Unable to generate a response from the AI model.";
     
-  } catch (err) {
-    // Log detailed error information for debugging
+  } catch (err) {    
     console.error("=== AI Request Error Details ===");
     console.error("Error Message:", err.message);
     console.error("Error Name:", err.name);
     console.error("Full Error Object:", err);
     console.error("================================");
-    
-    // Handle SDK-specific errors
+        
     if (err.message?.includes('401')) {
       return "Authentication error: Please check your API token.";
     } else if (err.message?.includes('429')) {
