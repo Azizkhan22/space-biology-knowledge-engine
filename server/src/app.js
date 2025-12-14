@@ -55,6 +55,15 @@ if (process.env.NODE_ENV === 'development') {
 } else {
   app.use(morgan('combined'));
 }
+const path = require('path');
+
+// Serve React static files
+app.use(express.static(path.join(__dirname, '../client/build')));
+
+// Redirect all other routes to React
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+});
 
 // Set up routes
 setRoutes(app);
