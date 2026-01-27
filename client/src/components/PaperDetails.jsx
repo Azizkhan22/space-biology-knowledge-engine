@@ -25,17 +25,16 @@ const PaperDetails = ({ paper }) => {
   const [chatMessages, setChatMessages] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [isAskingAI, setIsAskingAI] = useState(false);
-  const [copied, setCopied] = useState(false); // <-- Copy feedback state
+  const [copied, setCopied] = useState(false); 
   const chatContainerRef = useRef(null);
   const [aiSummary, setAiSummary] = useState(paper?.aiSummary || '');
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
-  // Reset chat messages when paper changes
+  
   useEffect(() => {
     setChatMessages([]);
   }, [paper?._id]);
-
-  // Auto-scroll to bottom when new messages are added
+  
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -65,8 +64,7 @@ const PaperDetails = ({ paper }) => {
       </div>
     );
   }
-
-  // Handle AI question submission
+  
   const handleAskAI = async (e) => {
     e.preventDefault();
     if (!currentQuestion.trim() || isAskingAI) return;
@@ -75,7 +73,6 @@ const PaperDetails = ({ paper }) => {
     setCurrentQuestion('');
     setIsAskingAI(true);
 
-    // Add user question to chat
     const userMessage = {
       id: Date.now(),
       type: 'user',
@@ -120,7 +117,6 @@ const PaperDetails = ({ paper }) => {
     }
   };
 
-  // Handle AI summary generation
   const handleGenerateAISummary = async () => {
     if (!paper?._id || isGeneratingSummary) return;
     setIsGeneratingSummary(true);
@@ -138,7 +134,6 @@ const PaperDetails = ({ paper }) => {
     }
   };
 
-  // Copy article URL to clipboard
   const handleCopyUrl = () => {
     if (paper.Link) {
       navigator.clipboard.writeText(paper.Link);
@@ -251,8 +246,8 @@ const PaperDetails = ({ paper }) => {
 
       {/* Content */}
       <div style={{
-        scrollbarWidth: "none", // Firefox
-        msOverflowStyle: "none", // IE 10+
+        scrollbarWidth: "none", 
+        msOverflowStyle: "none",
       }} className="flex-1 overflow-y-auto p-4 max-h-[600px] overflow-y-scroll">
         {activeTab === 'abstract' && (
           <div className="space-y-4 content-update">
@@ -287,7 +282,7 @@ const PaperDetails = ({ paper }) => {
               </div>
             </div>
 
-            {/* Results and Discussion Section - Only show if data is available */}
+            {/* Results and Discussion Section */}
             {paper['Results and Discussion'] != "Not Found" && paper['Results and Discussion'].trim() && (
               <div className="glass-effect rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">Results and Discussion</h3>
@@ -319,7 +314,7 @@ const PaperDetails = ({ paper }) => {
               </div>
             )}
 
-            {/* Conclusions Section - Only show if data is available */}
+            {/* Conclusions Section  */}
             {paper.Conclusions != "Not Found" && paper.Conclusions.trim() && (
               <div className="glass-effect rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">Conclusions</h3>

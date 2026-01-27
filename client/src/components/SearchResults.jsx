@@ -14,8 +14,7 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
   const handlePaperSelect = (paper) => {
     setSelectedPaper(paper);
   };
-
-  // Get display title and description based on current mode
+  
   const getDisplayInfo = () => {
     if (isSearchMode && searchQuery) {
       return {
@@ -127,8 +126,8 @@ const SearchResults = ({ publications, selectedPaper, setSelectedPaper, isLoadin
 
       {/* Results List */}
       <div style={{
-        scrollbarWidth: "none", // Firefox
-        msOverflowStyle: "none", // IE 10+
+        scrollbarWidth: "none", 
+        msOverflowStyle: "none",
       }} className="flex-1 overflow-y-auto p-4 space-y-4 list-update max-h-[700px] overflow-y-scroll">
         {publications.length === 0 ? (
           <div className="text-center py-12">

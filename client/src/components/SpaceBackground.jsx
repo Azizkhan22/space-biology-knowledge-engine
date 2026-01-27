@@ -38,7 +38,7 @@ const SpaceBackground = () => {
             key={`top-${i}`}
             className="absolute w-px h-px bg-white/80 rounded-full animate-twinkle"
             style={{
-              top: `${Math.random() * 20}%`, // 0–20%
+              top: `${Math.random() * 20}%`, 
               left: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 4}s`,
             }}

@@ -3,13 +3,11 @@ const AIService = require('../services/aiService');
 const SearchService = require('../services/searchService');
 const { validationResult } = require('express-validator');
 
-// Initialize SearchService
 const searchService = new SearchService({
   mongoUri: process.env.MONGODB_URI,
   dbName: process.env.DB_NAME
 });
 
-// Initialize SearchService when the controller is loaded
 (async () => {
   try {
     await searchService.init();
@@ -20,7 +18,6 @@ const searchService = new SearchService({
 })();
 
 class ArticleController {
-  // Get latest articles (20 articles based on latest date)
   async getLatestArticles(req, res) {
     try {
       const limit = parseInt(req.query.limit) || 20;
@@ -68,7 +65,7 @@ class ArticleController {
   // Get article by ID with full details
   async getArticlesByIds(req, res) {
   try {
-    const articlesArray = req.body; // expect array of {id, title} objects
+    const articlesArray = req.body;
     console.log('🔍 [DB Query] Received articles array:', articlesArray);
 
     if (!Array.isArray(articlesArray) || articlesArray.length === 0) {
