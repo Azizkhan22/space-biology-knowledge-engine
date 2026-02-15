@@ -11,6 +11,8 @@ const { setRoutes } = require('./routes/index');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+app.set('trust proxy', 1);
+
 // Connect to MongoDB
 connectDB();
 
@@ -56,14 +58,6 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('combined'));
 }
 const path = require('path');
-
-// Serve React static files
-app.use(express.static(path.join(__dirname, '../client/build')));
-
-// Redirect all other routes to React
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-});
 
 // Set up routes
 setRoutes(app);
