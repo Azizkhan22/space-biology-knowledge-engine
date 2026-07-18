@@ -6,8 +6,6 @@ const connectDB = async () => {
 
     const conn = await mongoose.connect(mongoURI, {
       dbName: "ArticlesDB", // explicitly set the database
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
     });
 
     console.log(`✅ [DB Connection] MongoDB Connected: ${conn.connection.host}`);

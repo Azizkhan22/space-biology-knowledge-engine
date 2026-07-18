@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('./config/dnsFix'); // Ensure Atlas SRV lookups work before any DB connection
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
