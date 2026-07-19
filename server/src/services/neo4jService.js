@@ -78,12 +78,16 @@ async function getTopEntitiesWithRelations(limit = 40) {
       // ✅ If related node is an article, map it to the entity only
       if (isArticle) {
         if (!entityArticlesMap[eId]) entityArticlesMap[eId] = [];
+        // Use the Mongo _id stored on the Article node (its `id` property), not
+        // Neo4j's internal node id — the client fetches article details from
+        // MongoDB by _id.
+        const mongoId = relatedNode.properties.id || relatedId;
         entityArticlesMap[eId].push({
-          id: relatedId,
+          id: mongoId,
           title: relatedNode.properties.title || 'Untitled Article',
           ...relatedNode.properties
         });
-        entitiesMap.get(eId).articleIds.push(relatedId);
+        entitiesMap.get(eId).articleIds.push(mongoId);
         continue; // don't add article nodes or edges
       }
 
