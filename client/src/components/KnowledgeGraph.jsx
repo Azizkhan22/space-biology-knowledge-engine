@@ -5,7 +5,14 @@ import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Info } from 'lucide-react';
 
 cytoscape.use(dagre);
 
-const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick, selectedEntity }) => {
+const KnowledgeGraph = ({
+  graphData,
+  onEntityClick,
+  selectedEntity,
+  eyebrow = 'Explore',
+  title = 'Knowledge Graph',
+  subtitle,
+}) => {
   const cyRef = useRef(null);
   const containerRef = useRef(null);
   const [cy, setCy] = useState(null);
@@ -131,7 +138,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         {
           selector: 'edge',
           style: {
-            'width': (edge) => (edge.data('weight') * 5) || 2,
+            'width': (edge) => Math.max(1.2, Math.min(1 + Math.log2((edge.data('weight') || 1) + 1), 6)),
             'line-color': '#64748b',
             'target-arrow-color': '#64748b',
             'target-arrow-shape': 'triangle',
@@ -144,7 +151,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         {
           selector: 'edge.highlighted',
           style: {
-            'width': (edge) => ((edge.data('weight') * 6) || 3) + 2,
+            'width': (edge) => Math.max(2, Math.min(2 + Math.log2((edge.data('weight') || 1) + 1), 7)),
             'line-color': '#f59e0b',
             'target-arrow-color': '#f59e0b',
             'opacity': 0.8,
@@ -154,7 +161,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         {
           selector: 'edge:hover',
           style: {
-            'width': (edge) => ((edge.data('weight') * 5) || 2) + 1,
+            'width': (edge) => Math.max(1.5, Math.min(1.5 + Math.log2((edge.data('weight') || 1) + 1), 6.5)),
             'line-color': '#94a3b8',
             'target-arrow-color': '#94a3b8',
             'opacity': 0.7
@@ -166,7 +173,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
             'line-color': '#3b74f5',
             'target-arrow-color': '#3b74f5',
             'opacity': 1,
-            'width': (edge) => ((edge.data('weight') * 4) || 2) + 2,
+            'width': (edge) => Math.max(2, Math.min(2 + Math.log2((edge.data('weight') || 1) + 1), 7)),
           }
         },
         {
@@ -286,11 +293,16 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
       {/* Header */}
       <div className="p-5 border-b border-white/8">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-space-300/90">
-              Explore
+              {eyebrow}
             </p>
-            <h2 className="mt-1 text-lg font-semibold text-white">Knowledge Graph</h2>
+            <h2 className="mt-1 truncate text-lg font-semibold text-white">{title}</h2>
+            {subtitle && (
+              <p className="mt-0.5 max-w-[320px] truncate text-xs text-slate-400" title={subtitle}>
+                {subtitle}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-1">
@@ -327,28 +339,20 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
 
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]">
-          {currentGraphData && (currentGraphData.entities || currentGraphData.nodes)?.length > 0 ? (
-            <>
-              {(currentGraphData.entities || currentGraphData.nodes)
-                .slice(0, 5)
-                .map((node) => (
-                  <div key={node.id} className="flex items-center gap-1.5">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full ring-1 ring-white/20"
-                      style={{ backgroundColor: categoryColors[node.category] || '#3b74f5' }}
-                    />
-                    <span className="max-w-[120px] truncate text-slate-400">{node.label}</span>
-                  </div>
-                ))}
-              {(currentGraphData.entities || currentGraphData.nodes)?.length > 5 && (
-                <span className="text-slate-500">
-                  +{(currentGraphData.entities || currentGraphData.nodes).length - 5} more
-                </span>
-              )}
-            </>
-          ) : (
-            <span className="text-slate-500">Loading entities…</span>
-          )}
+          {(() => {
+            const nodes = currentGraphData?.entities || currentGraphData?.nodes || [];
+            if (nodes.length === 0) return <span className="text-slate-500">Loading entities…</span>;
+            const cats = [...new Set(nodes.map((n) => n.category).filter(Boolean))];
+            return (cats.length ? cats : ['biology']).map((c) => (
+              <div key={c} className="flex items-center gap-1.5">
+                <span
+                  className="h-2.5 w-2.5 rounded-full ring-1 ring-white/20"
+                  style={{ backgroundColor: categoryColors[c] || '#3b74f5' }}
+                />
+                <span className="capitalize text-slate-400">{c}</span>
+              </div>
+            ));
+          })()}
         </div>
       </div>
 

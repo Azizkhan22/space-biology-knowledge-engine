@@ -75,10 +75,10 @@ class ArticleController {
       });
     }
 
-    // Extract IDs and validate
+    // Extract IDs and validate. Accept either raw id strings or { id } objects.
     const validIds = articlesArray
-      .map(a => a.id)
-      .filter(id => /^[0-9a-fA-F]{24}$/.test(id));
+      .map(a => (typeof a === 'string' ? a : a && a.id))
+      .filter(id => typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id));
 
     if (validIds.length === 0) {
       return res.status(400).json({
@@ -362,11 +362,12 @@ class ArticleController {
   
       // --- Filter valid relations (avoid orphan edges)
       const filteredRelations = relations
-        .map(r => ({
-          id: String(r.id),
+        .map((r, i) => ({
+          id: `${r.source}__${r.target}__${i}`,
           source: String(r.source),
           target: String(r.target),
-          type: r.type || 'RELATED_TO'
+          weight: r.weight || 1,
+          type: r.type || 'CO_OCCURS'
         }))
         .filter(r => validIds.has(r.source) && validIds.has(r.target));
   
@@ -391,7 +392,44 @@ class ArticleController {
       });
     }
   }
-  
+
+  // Get the knowledge graph scoped to a single article
+  async getArticleGraph(req, res) {
+    try {
+      const { articleId } = req.params;
+      if (!articleId || !articleId.match(/^[0-9a-fA-F]{24}$/)) {
+        return res.status(400).json({ success: false, error: 'Invalid article ID format' });
+      }
+
+      const { getArticleGraph } = require('../services/neo4jService');
+      const { entities, relations } = await getArticleGraph(articleId);
+
+      const validIds = new Set(entities.map(e => String(e.id)));
+      const filteredRelations = relations
+        .map((r, i) => ({
+          id: `${r.source}__${r.target}__${i}`,
+          source: String(r.source),
+          target: String(r.target),
+          weight: r.weight || 1,
+          type: r.type || 'CO_OCCURS'
+        }))
+        .filter(r => validIds.has(r.source) && validIds.has(r.target));
+
+      console.log(`✅ [Neo4j] Article graph: ${entities.length} entities, ${filteredRelations.length} relations.`);
+      return res.status(200).json({
+        success: true,
+        data: { entities, relations: filteredRelations }
+      });
+    } catch (error) {
+      console.error('❌ [Neo4j Error] Failed to fetch article graph:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch article graph',
+        details: error.message
+      });
+    }
+  }
+
 
 
   // Helper method to categorize authors

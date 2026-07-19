@@ -32,6 +32,10 @@ function App() {
   const [entityArticles, setEntityArticles] = useState([]);
   const [isLoadingEntity, setIsLoadingEntity] = useState(false);
 
+  const [exploreScope, setExploreScope] = useState('global'); // 'global' | 'article'
+  const [articleGraph, setArticleGraph] = useState(null); // { article, data }
+  const [isLoadingArticleGraph, setIsLoadingArticleGraph] = useState(false);
+
   /* ---------------------------------------------------------------- loaders */
   const loadSuggested = useCallback(async () => {
     setIsLoadingSuggested(true);
@@ -76,8 +80,34 @@ function App() {
   }, []);
 
   const goExplore = useCallback(() => {
+    setExploreScope('global');
+    setSelectedEntity(null);
     setView('explore');
     setMobileReaderOpen(false);
+  }, []);
+
+  const backToReading = useCallback(() => {
+    setExploreScope('global');
+    setView('results');
+  }, []);
+
+  const handleExploreArticle = useCallback(async (paper) => {
+    if (!paper?._id) return;
+    setExploreScope('article');
+    setArticleGraph({ article: paper, data: null });
+    setSelectedEntity(null);
+    setEntityArticles([]);
+    setMobileReaderOpen(false);
+    setView('explore');
+    setIsLoadingArticleGraph(true);
+    try {
+      const res = await ApiService.getArticleGraph(paper._id);
+      setArticleGraph({ article: paper, data: res.success ? res.data : { entities: [], relations: [] } });
+    } catch {
+      setArticleGraph({ article: paper, data: { entities: [], relations: [] } });
+    } finally {
+      setIsLoadingArticleGraph(false);
+    }
   }, []);
 
   /* ------------------------------------------------------------------ search */
@@ -196,7 +226,7 @@ function App() {
               </div>
               <div className="hidden min-h-0 overflow-hidden bg-base-900/20 lg:block">
                 <div className="mx-auto h-full w-full max-w-4xl">
-                  <PaperDetails paper={selectedPaper} />
+                  <PaperDetails paper={selectedPaper} onExploreArticle={handleExploreArticle} />
                 </div>
               </div>
             </div>
@@ -204,14 +234,29 @@ function App() {
 
           {view === 'explore' && (
             <ExploreView
-              graphData={graphData}
-              graphStatus={graphStatus}
+              graphData={exploreScope === 'article' ? articleGraph?.data : graphData}
+              graphStatus={
+                exploreScope === 'article'
+                  ? isLoadingArticleGraph || !articleGraph?.data
+                    ? 'loading'
+                    : articleGraph.data.entities?.length
+                    ? 'ready'
+                    : 'unavailable'
+                  : graphStatus
+              }
+              eyebrow={exploreScope === 'article' ? 'Article graph' : 'Explore'}
+              title={exploreScope === 'article' ? 'Entities in this paper' : 'Knowledge Graph'}
+              subtitle={
+                exploreScope === 'article'
+                  ? articleGraph?.article?.Title
+                  : 'Top biomedical entities across the corpus'
+              }
               selectedEntity={selectedEntity}
               onEntityClick={handleEntityClick}
               entityArticles={entityArticles}
               isLoadingEntity={isLoadingEntity}
               onOpenPaper={openFromExplore}
-              onBack={goHome}
+              onBack={exploreScope === 'article' ? backToReading : goHome}
             />
           )}
         </main>
@@ -230,7 +275,7 @@ function App() {
             </button>
           </div>
           <div className="min-h-0 flex-1">
-            <PaperDetails paper={selectedPaper} />
+            <PaperDetails paper={selectedPaper} onExploreArticle={handleExploreArticle} />
           </div>
         </div>
       )}

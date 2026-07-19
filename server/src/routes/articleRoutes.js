@@ -17,6 +17,9 @@ router.get('/suggested', paginationValidation, articleController.getSuggestedArt
 
 router.get('/knowledge-graph', articleController.getKnowledgeGraph);
 
+// Get the knowledge graph for a single article
+router.get('/:articleId/graph', articleController.getArticleGraph);
+
 // Get article by ID
 router.post('/byIds', articleController.getArticlesByIds);
 

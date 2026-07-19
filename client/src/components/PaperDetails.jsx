@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Send,
   Check,
+  Network,
 } from 'lucide-react';
 import ApiService from '../services/api';
 
@@ -45,7 +46,7 @@ const CollapsibleSection = ({ title, text }) => {
   );
 };
 
-const PaperDetails = ({ paper }) => {
+const PaperDetails = ({ paper, onExploreArticle }) => {
   const [activeTab, setActiveTab] = useState('abstract');
   const [chatMessages, setChatMessages] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState('');
@@ -216,6 +217,17 @@ const PaperDetails = ({ paper }) => {
               </span>
             ))}
           </div>
+        )}
+
+        {/* Explore this article's entity graph */}
+        {onExploreArticle && (
+          <button
+            onClick={() => onExploreArticle(paper)}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-space-500/40 bg-space-500/10 px-4 py-2.5 text-sm font-medium text-space-200 transition-colors hover:bg-space-500/20"
+          >
+            <Network className="h-4 w-4" />
+            Explore article graph
+          </button>
         )}
 
         {/* Tabs */}
