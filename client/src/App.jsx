@@ -36,6 +36,36 @@ function App() {
   const [articleGraph, setArticleGraph] = useState(null); // { article, data }
   const [isLoadingArticleGraph, setIsLoadingArticleGraph] = useState(false);
 
+  const [searchError, setSearchError] = useState(null);
+  const [recent, setRecent] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('sbke:recent') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const pushRecent = useCallback((q) => {
+    setRecent((prev) => {
+      const next = [q, ...prev.filter((x) => x.toLowerCase() !== q.toLowerCase())].slice(0, 6);
+      try {
+        localStorage.setItem('sbke:recent', JSON.stringify(next));
+      } catch {
+        /* ignore quota / privacy-mode errors */
+      }
+      return next;
+    });
+  }, []);
+
+  const clearRecent = useCallback(() => {
+    setRecent([]);
+    try {
+      localStorage.removeItem('sbke:recent');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   /* ---------------------------------------------------------------- loaders */
   const loadSuggested = useCallback(async () => {
     setIsLoadingSuggested(true);
@@ -122,19 +152,27 @@ function App() {
     setSearchContext({ mode: 'search', query: q });
     setSelectedEntity(null);
     setMobileReaderOpen(false);
+    setSearchError(null);
     setIsLoading(true);
     try {
       const res = await ApiService.searchArticles(q);
-      const data = res.success ? res.data : [];
-      setResults(data);
-      setSelectedPaper(data[0] || null);
+      if (res.success) {
+        setResults(res.data);
+        setSelectedPaper(res.data[0] || null);
+        pushRecent(q);
+      } else {
+        setResults([]);
+        setSelectedPaper(null);
+        setSearchError(res.error || 'Search failed. Please try again.');
+      }
     } catch {
       setResults([]);
       setSelectedPaper(null);
+      setSearchError('Could not reach the server. Make sure the API is running.');
     } finally {
       setIsLoading(false);
     }
-  }, [goHome]);
+  }, [goHome, pushRecent]);
 
   const handleChip = useCallback((c) => runSearch(c), [runSearch]);
 
@@ -175,6 +213,37 @@ function App() {
     if (isMobile()) setMobileReaderOpen(true);
   }, [entityArticles, selectedEntity]);
 
+  // Keyboard shortcuts: "/" or Ctrl/Cmd+K focuses search; Esc steps back.
+  // (Declared after the callbacks it references to avoid a TDZ error.)
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = (e.target.tagName || '').toLowerCase();
+      const typing = tag === 'input' || tag === 'textarea' || e.target.isContentEditable;
+
+      if ((e.key === '/' && !typing) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) {
+        e.preventDefault();
+        const input = document.querySelector('[data-search-input]');
+        if (input) {
+          input.focus();
+          input.select?.();
+        }
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        if (typing) {
+          e.target.blur();
+        } else if (mobileReaderOpen) {
+          setMobileReaderOpen(false);
+        } else if (view === 'explore') {
+          exploreScope === 'article' ? backToReading() : goHome();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileReaderOpen, view, exploreScope, backToReading, goHome]);
+
   /* ------------------------------------------------------------------- render */
   const heroProps = {
     searchQuery,
@@ -182,6 +251,9 @@ function App() {
     onSearch: runSearch,
     onChip: handleChip,
     stats: { topics: graphStatus === 'ready' ? graphData?.entities?.length : null },
+    recent,
+    onRecent: runSearch,
+    onClearRecent: clearRecent,
   };
 
   return (
@@ -222,6 +294,8 @@ function App() {
                   onSelect={selectFromList}
                   isLoading={isLoading}
                   context={searchContext}
+                  error={searchContext.mode === 'search' ? searchError : null}
+                  onRetry={() => runSearch(searchContext.query)}
                 />
               </div>
               <div className="hidden min-h-0 overflow-hidden bg-base-900/20 lg:block">

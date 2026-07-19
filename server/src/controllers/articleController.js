@@ -152,20 +152,16 @@ class ArticleController {
   // Get suggested articles (for home page)
   async getSuggestedArticles(req, res) {
     try {
-      const limit = 20;
-
-      const count = await Article.countDocuments();      
-      
-      const articles = await Article.find({})
-        .sort({ PublishedDate: -1 })
-        .limit(limit)
-        .select('-__v')
-        .lean();
-
-      res.json({
-        success: true,
-        data: articles
+      const cache = require('../utils/cache');
+      const { value, cached } = await cache.remember('suggested:20', 5 * 60 * 1000, async () => {
+        return Article.find({})
+          .sort({ PublishedDate: -1 })
+          .limit(20)
+          .select('-__v')
+          .lean();
       });
+
+      res.json({ success: true, cached, data: value });
     } catch (error) {
       console.error('Error fetching suggested articles:', error);
       res.status(500).json({
@@ -341,48 +337,39 @@ class ArticleController {
   // Get knowledge graph data
   async getKnowledgeGraph(req, res) {
     try {
+      const cache = require('../utils/cache');
       const limit = 40;
-      console.log(`🔍 [Neo4j] Fetching knowledge graph data (limit: ${limit})...`);
-  
-      const { getTopEntitiesWithRelations } = require('../services/neo4jService');
-  
-      // Get entities, relations, and related articles
-      const { entities, relations, entityArticlesMap } = await getTopEntitiesWithRelations(limit);
-  
-      console.log(`✅ [Neo4j] Retrieved ${entities.length} entities and ${relations.length} relations.`);
-  
-      // --- Normalize IDs and attach article IDs
-      const normalizedEntities = entities.map(e => ({
-        ...e,
-        id: String(e.id),
-        articleIds: entityArticlesMap[String(e.id)] || []
-      }));
-  
-      const validIds = new Set(normalizedEntities.map(e => e.id));
-  
-      // --- Filter valid relations (avoid orphan edges)
-      const filteredRelations = relations
-        .map((r, i) => ({
-          id: `${r.source}__${r.target}__${i}`,
-          source: String(r.source),
-          target: String(r.target),
-          weight: r.weight || 1,
-          type: r.type || 'CO_OCCURS'
-        }))
-        .filter(r => validIds.has(r.source) && validIds.has(r.target));
-  
-      console.log(`📡 Cleaned Graph: ${normalizedEntities.length} entities, ${filteredRelations.length} valid relations.`);
-  
-      // --- Send only entities + relations (no article nodes)      
-      return res.status(200).json({
-        success: true,
-        message: `Fetched ${normalizedEntities.length} entities and ${filteredRelations.length} relations from Neo4j.`,
-        data: {
-          entities: normalizedEntities,
-          relations: filteredRelations
-        }
+
+      // The graph is expensive (two Neo4j queries) and changes only when the
+      // NLP pipeline re-runs, so cache it for 10 minutes.
+      const { value, cached } = await cache.remember('knowledge-graph:40', 10 * 60 * 1000, async () => {
+        console.log(`🔍 [Neo4j] Fetching knowledge graph data (limit: ${limit})...`);
+        const { getTopEntitiesWithRelations } = require('../services/neo4jService');
+        const { entities, relations, entityArticlesMap } = await getTopEntitiesWithRelations(limit);
+
+        const normalizedEntities = entities.map(e => ({
+          ...e,
+          id: String(e.id),
+          articleIds: entityArticlesMap[String(e.id)] || []
+        }));
+
+        const validIds = new Set(normalizedEntities.map(e => e.id));
+
+        const filteredRelations = relations
+          .map((r, i) => ({
+            id: `${r.source}__${r.target}__${i}`,
+            source: String(r.source),
+            target: String(r.target),
+            weight: r.weight || 1,
+            type: r.type || 'CO_OCCURS'
+          }))
+          .filter(r => validIds.has(r.source) && validIds.has(r.target));
+
+        return { entities: normalizedEntities, relations: filteredRelations };
       });
-  
+
+      console.log(`📡 Knowledge graph ${cached ? '(cached)' : '(fresh)'}: ${value.entities.length} entities, ${value.relations.length} relations.`);
+      return res.status(200).json({ success: true, cached, data: value });
     } catch (error) {
       console.error('❌ [Neo4j Error] Failed to fetch knowledge graph:', error);
       return res.status(500).json({

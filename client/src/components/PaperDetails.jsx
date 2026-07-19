@@ -13,6 +13,7 @@ import {
   Send,
   Check,
   Network,
+  Quote,
 } from 'lucide-react';
 import ApiService from '../services/api';
 
@@ -52,6 +53,7 @@ const PaperDetails = ({ paper, onExploreArticle }) => {
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [citeCopied, setCiteCopied] = useState(false);
   const chatContainerRef = useRef(null);
   const [aiSummary, setAiSummary] = useState(paper?.aiSummary || '');
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
@@ -149,6 +151,15 @@ const PaperDetails = ({ paper, onExploreArticle }) => {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const handleCopyCitation = () => {
+    const authors = paper.Authors?.length ? paper.Authors.join(', ') : 'Unknown authors';
+    const year = paper.PublishedDate ? new Date(paper.PublishedDate).getFullYear() : 'n.d.';
+    const citation = `${authors} (${year}). ${paper.Title}.${paper.Link ? ` ${paper.Link}` : ''}`;
+    navigator.clipboard.writeText(citation);
+    setCiteCopied(true);
+    setTimeout(() => setCiteCopied(false), 1500);
+  };
+
   const tabs = [
     { id: 'abstract', label: 'Read', icon: BookOpen },
     { id: 'summary', label: 'AI Summary', icon: Sparkles },
@@ -173,8 +184,17 @@ const PaperDetails = ({ paper, onExploreArticle }) => {
           </p>
           <div className="flex items-center gap-1.5">
             <button
-              className="relative grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
+              className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              title="Copy citation"
+              aria-label="Copy citation"
+              onClick={handleCopyCitation}
+            >
+              {citeCopied ? <Check className="h-4 w-4 text-cosmic-300" /> : <Quote className="h-4 w-4" />}
+            </button>
+            <button
+              className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
               title={paper.Link ? 'Copy article link' : 'No link available'}
+              aria-label="Copy article link"
               onClick={handleCopyUrl}
               disabled={!paper.Link}
             >
@@ -183,6 +203,7 @@ const PaperDetails = ({ paper, onExploreArticle }) => {
             <button
               className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
               title={paper.Link ? 'Open article' : 'No link available'}
+              aria-label="Open article in new tab"
               onClick={() => paper.Link && window.open(paper.Link, '_blank', 'noopener,noreferrer')}
               disabled={!paper.Link}
             >
