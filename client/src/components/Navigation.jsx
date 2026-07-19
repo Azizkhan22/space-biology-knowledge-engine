@@ -18,7 +18,7 @@ const Navigation = ({ view, searchQuery, setSearchQuery, onSearch, onHome, onExp
               <Rocket className="h-5 w-5 text-white" />
             </span>
             <span className="hidden text-left leading-tight sm:block">
-              <span className="block text-[15px] font-semibold text-white">NASA BioSpace</span>
+              <span className="block text-[15px] font-semibold text-white">NASA Space Biology</span>
               <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
                 Knowledge Engine
               </span>
