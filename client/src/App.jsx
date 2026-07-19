@@ -1,234 +1,239 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import Navigation from './components/Navigation';
-import SearchResults from './components/SearchResults';
-import KnowledgeGraph from './components/KnowledgeGraph';
+import HomeView from './components/HomeView';
+import ResultsList from './components/ResultsList';
+import ExploreView from './components/ExploreView';
 import PaperDetails from './components/PaperDetails';
 import Footer from './components/Footer';
 import SpaceBackground from './components/SpaceBackground';
+import CursorEffects from './components/CursorEffects';
 import ApiService from './services/api';
 
+const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 1024;
+
 function App() {
+  const [view, setView] = useState('home'); // 'home' | 'results' | 'explore'
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredPublications, setFilteredPublications] = useState([]);
-  const [selectedPaper, setSelectedPaper] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+
+  const [suggested, setSuggested] = useState([]);
   const [isLoadingSuggested, setIsLoadingSuggested] = useState(false);
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [isSearchMode, setIsSearchMode] = useState(false);
-  const [knowledgeGraphData, setKnowledgeGraphData] = useState(null);
+
+  const [results, setResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchContext, setSearchContext] = useState({ mode: 'browse' });
+
+  const [selectedPaper, setSelectedPaper] = useState(null);
+  const [mobileReaderOpen, setMobileReaderOpen] = useState(false);
+
+  const [graphData, setGraphData] = useState(null);
+  const [graphStatus, setGraphStatus] = useState('loading'); // 'loading' | 'ready' | 'unavailable'
   const [selectedEntity, setSelectedEntity] = useState(null);
-  
-  const paperDetailsRef = useRef(null);
-  const searchResultsRef = useRef(null);
+  const [entityArticles, setEntityArticles] = useState([]);
+  const [isLoadingEntity, setIsLoadingEntity] = useState(false);
 
-  const smoothScrollTo = useCallback((element, offset = 0) => {
-    if (!element) return;
-    
-    const elementPosition = element.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - offset;
-    
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: 'smooth'
-    });
-  }, []);
-  
-  const isMobileOrTablet = useCallback(() => {
-    return window.innerWidth < 1024; 
-  }, []);
-  
-  const handleSearch = async (query) => {
-    setIsLoading(true);
-    setIsSearchMode(true);
-    setSelectedEntity(null);
-    
-    try {
-      if (!query.trim()) {        
-        setIsSearchMode(false);
-        await loadSuggestedArticles();
-      } else {        
-        const response = await ApiService.searchArticles(query);
-        if (response.success) {
-          setFilteredPublications(response.data);
-        } else {
-          console.error('Search failed:', response.error);
-          setFilteredPublications([]);
-        }
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-      setFilteredPublications([]);
-    } finally {
-      setIsLoading(false);
-    }
-    
-    if (query.trim() && isMobileOrTablet() && searchResultsRef.current) {
-      smoothScrollTo(searchResultsRef.current, 80);
-    }
-  };
-
-  const loadSuggestedArticles = async () => {
+  /* ---------------------------------------------------------------- loaders */
+  const loadSuggested = useCallback(async () => {
     setIsLoadingSuggested(true);
     try {
-      const response = await ApiService.getSuggestedArticles();
-      if (response.success) {
-        setFilteredPublications(response.data);
-      } else {
-        console.error('Failed to load suggested articles:', response.error);        
-        setFilteredPublications(mockPublications.slice(0, 5));
-      }
-    } catch (error) {
-      console.error('Error loading suggested articles:', error);
-      setFilteredPublications(mockPublications.slice(0, 5));
+      const res = await ApiService.getSuggestedArticles();
+      setSuggested(res.success ? res.data : []);
+    } catch {
+      setSuggested([]);
     } finally {
       setIsLoadingSuggested(false);
     }
-  };
-  
-  const loadKnowledgeGraph = async () => {
+  }, []);
+
+  const loadGraph = useCallback(async () => {
+    setGraphStatus('loading');
     try {
-      const response = await ApiService.getKnowledgeGraph();
-      if (response.success) {
-        setKnowledgeGraphData(response.data);
+      const res = await ApiService.getKnowledgeGraph();
+      const data = res?.data;
+      const ready = res?.success && data && ((data.entities?.length || 0) + (data.nodes?.length || 0) > 0);
+      if (ready) {
+        setGraphData(data);
+        setGraphStatus('ready');
       } else {
-        console.error('Failed to load knowledge graph:', response.error);
+        setGraphStatus('unavailable');
       }
-    } catch (error) {
-      console.error('Error loading knowledge graph:', error);
+    } catch {
+      setGraphStatus('unavailable');
     }
-  };
-  
-  const handleEntityClick = useCallback(async (entity) => {
-    setSelectedEntity(entity);
-    setIsSearchMode(false);
+  }, []);
+
+  useEffect(() => {
+    loadSuggested();
+    loadGraph();
+  }, [loadSuggested, loadGraph]);
+
+  /* -------------------------------------------------------------- navigation */
+  const goHome = useCallback(() => {
+    setView('home');
+    setSelectedEntity(null);
+    setMobileReaderOpen(false);
+    setSearchQuery('');
+  }, []);
+
+  const goExplore = useCallback(() => {
+    setView('explore');
+    setMobileReaderOpen(false);
+  }, []);
+
+  /* ------------------------------------------------------------------ search */
+  const runSearch = useCallback(async (query) => {
+    const q = (query ?? '').trim();
+    setSearchQuery(query ?? '');
+    if (!q) {
+      goHome();
+      return;
+    }
+    setView('results');
+    setSearchContext({ mode: 'search', query: q });
+    setSelectedEntity(null);
+    setMobileReaderOpen(false);
     setIsLoading(true);
-    console.log(entity.articleIds);
     try {
-      const response = await ApiService.getArticlesByIds(entity.articleIds);      
-      if (response.success) {
-        setFilteredPublications(response.data);
-      } else {
-        console.error('Failed to load articles for entity:', response.error);
-        setFilteredPublications([]);
-      }
-    } catch (error) {
-      console.error('Error loading articles for entity:', error);
-      setFilteredPublications([]);
+      const res = await ApiService.searchArticles(q);
+      const data = res.success ? res.data : [];
+      setResults(data);
+      setSelectedPaper(data[0] || null);
+    } catch {
+      setResults([]);
+      setSelectedPaper(null);
     } finally {
       setIsLoading(false);
     }
-  
-    if (isMobileOrTablet() && searchResultsRef.current) {
-      setTimeout(() => {
-        smoothScrollTo(searchResultsRef.current, 80);
-      }, 100);
-    }
-  }, [isMobileOrTablet, smoothScrollTo]);
-  
-  const handlePaperSelect = useCallback((paper) => {
+  }, [goHome]);
+
+  const handleChip = useCallback((c) => runSearch(c), [runSearch]);
+
+  /* ------------------------------------------------------------ paper opening */
+  const openFromHome = useCallback((paper) => {
+    setResults(suggested);
+    setSearchContext({ mode: 'browse' });
     setSelectedPaper(paper);
-      
-    if (isMobileOrTablet() && paperDetailsRef.current) {
-      setTimeout(() => {
-        smoothScrollTo(paperDetailsRef.current, 80);
-      }, 100);
-    }
-  }, [isMobileOrTablet, smoothScrollTo]);
-  
-  const handleGenerateAISummary = async (paper) => {
-    setIsGeneratingAI(true);
-    
-    try {
-      const response = await ApiService.generateAISummary(paper.id, paper);
-      
-      if (response.success) {        
-        setSelectedPaper(prev => ({
-          ...prev,
-          aiSummary: response.data.summary
-        }));
-                
-        setFilteredPublications(prev => 
-          prev.map(p => 
-            p.id === paper.id ? { ...p, aiSummary: response.data.summary } : p
-          )
-        );
-      } else {
-        console.error('Failed to generate AI summary:', response.error);
-      }
-    } catch (error) {
-      console.error('Error generating AI summar//', error);
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  };
-  
-  useEffect(() => {
-    loadSuggestedArticles();
-    loadKnowledgeGraph();
+    setView('results');
+    if (isMobile()) setMobileReaderOpen(true);
+  }, [suggested]);
+
+  const selectFromList = useCallback((paper) => {
+    setSelectedPaper(paper);
+    if (isMobile()) setMobileReaderOpen(true);
   }, []);
-  
-  useEffect(() => {
-    if (filteredPublications.length > 0 && !selectedPaper) {
-      setSelectedPaper(filteredPublications[0]);
+
+  /* --------------------------------------------------------- graph exploration */
+  const handleEntityClick = useCallback(async (entity) => {
+    setSelectedEntity(entity);
+    setIsLoadingEntity(true);
+    setEntityArticles([]);
+    try {
+      const res = await ApiService.getArticlesByIds(entity.articleIds || []);
+      setEntityArticles(res.success ? res.data : []);
+    } catch {
+      setEntityArticles([]);
+    } finally {
+      setIsLoadingEntity(false);
     }
-  }, [filteredPublications, selectedPaper]);
+  }, []);
+
+  const openFromExplore = useCallback((paper) => {
+    setResults(entityArticles);
+    setSearchContext({ mode: 'entity', entity: selectedEntity });
+    setSelectedPaper(paper);
+    setView('results');
+    if (isMobile()) setMobileReaderOpen(true);
+  }, [entityArticles, selectedEntity]);
+
+  /* ------------------------------------------------------------------- render */
+  const heroProps = {
+    searchQuery,
+    setSearchQuery,
+    onSearch: runSearch,
+    onChip: handleChip,
+    stats: { topics: graphStatus === 'ready' ? graphData?.entities?.length : null },
+  };
 
   return (
-    <div className="min-h-screen text-white" style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
-      {/* Enhanced Space Background */}
+    <div className="relative text-white">
       <SpaceBackground />
+      <CursorEffects />
 
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Navigation */}
-        <Navigation 
+      <div className="relative z-10 flex h-[100dvh] flex-col">
+        <Navigation
+          view={view}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          onSearch={handleSearch}
+          onSearch={runSearch}
+          onHome={goHome}
+          onExplore={goExplore}
         />
 
-        {/* Main Content */}
-        <main className="flex-1 flex flex-col lg:flex-row">
-          {/* Mobile Layout: Knowledge Graph First, then Search Results, then Paper Details */}
-          {/* Desktop Layout: Search Results, Knowledge Graph, Paper Details */}
-          
-          {/* Knowledge Graph Panel - Top on mobile, Center on desktop */}
-          <div className="w-full lg:w-1/3 xl:w-2/5 border-r border-white/10 bg-black/10 graph-update order-1 lg:order-2 h-100 lg:h-auto">
-            <KnowledgeGraph
-              selectedPaper={selectedPaper}
-              publications={filteredPublications}
-              graphData={knowledgeGraphData}
+        <main className={`min-h-0 flex-1 ${view === 'home' ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+          {view === 'home' && (
+            <>
+              <HomeView
+                hero={heroProps}
+                suggested={suggested}
+                isLoading={isLoadingSuggested}
+                onOpenPaper={openFromHome}
+                onExplore={goExplore}
+              />
+              <Footer />
+            </>
+          )}
+
+          {view === 'results' && (
+            <div className="grid h-full grid-cols-1 lg:grid-cols-[minmax(340px,380px)_1fr]">
+              <div className="min-h-0 overflow-hidden border-r border-white/8 bg-base-900/40">
+                <ResultsList
+                  publications={results}
+                  selectedPaper={selectedPaper}
+                  onSelect={selectFromList}
+                  isLoading={isLoading}
+                  context={searchContext}
+                />
+              </div>
+              <div className="hidden min-h-0 overflow-hidden bg-base-900/20 lg:block">
+                <div className="mx-auto h-full w-full max-w-4xl">
+                  <PaperDetails paper={selectedPaper} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {view === 'explore' && (
+            <ExploreView
+              graphData={graphData}
+              graphStatus={graphStatus}
+              selectedEntity={selectedEntity}
               onEntityClick={handleEntityClick}
-              selectedEntity={selectedEntity}
+              entityArticles={entityArticles}
+              isLoadingEntity={isLoadingEntity}
+              onOpenPaper={openFromExplore}
+              onBack={goHome}
             />
-          </div>
-
-          {/* Search Results Panel - Middle on mobile, Left on desktop */}
-          <div ref={searchResultsRef} className="w-full lg:w-1/3 xl:w-1/4 border-r border-white/10 bg-black/20 backdrop-blur-sm panel-update order-2 lg:order-1">
-            <SearchResults
-              publications={filteredPublications}
-              selectedPaper={selectedPaper}
-              setSelectedPaper={handlePaperSelect}
-              isLoading={isLoading}
-              isLoadingSuggested={isLoadingSuggested}
-              isSearchMode={isSearchMode}
-              selectedEntity={selectedEntity}
-              searchQuery={searchQuery}
-            />
-          </div>
-
-          {/* Paper Details Panel - Bottom on mobile, Right on desktop */}
-          <div ref={paperDetailsRef} className="w-full lg:w-1/3 xl:w-1/3 bg-black/20 backdrop-blur-sm panel-update order-3 lg:order-3">
-            <PaperDetails
-              paper={selectedPaper}
-              onGenerateAISummary={handleGenerateAISummary}
-              isGeneratingAI={isGeneratingAI}
-            />
-          </div>
+          )}
         </main>
-
-        {/* Footer */}
-        <Footer />
       </div>
+
+      {/* Mobile reader overlay */}
+      {mobileReaderOpen && selectedPaper && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-base-900 lg:hidden">
+          <div className="flex items-center gap-2 border-b border-white/8 px-4 py-3">
+            <button
+              onClick={() => setMobileReaderOpen(false)}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Results
+            </button>
+          </div>
+          <div className="min-h-0 flex-1">
+            <PaperDetails paper={selectedPaper} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
