@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('../config/dnsFix'); // Ensure Atlas SRV lookups work before connecting
 const mongoose = require('mongoose');
 const Article = require('../models/Article');
 

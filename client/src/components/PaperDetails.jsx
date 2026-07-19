@@ -1,40 +1,65 @@
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Users, 
-  Calendar, 
-  Tag, 
-  BookOpen, 
-  Sparkles, 
-  ExternalLink, 
-  Share2, 
-  Bookmark,
-  Loader,
+import {
+  Users,
+  Calendar,
+  BookOpen,
+  Sparkles,
+  ExternalLink,
+  Share2,
+  Loader2,
   ChevronDown,
   ChevronUp,
   MessageCircle,
-  Send
+  Send,
+  Check,
 } from 'lucide-react';
 import ApiService from '../services/api';
-import { askAI } from '../services/aiChat';
+
+const hasText = (v) => v && v !== 'Not Found' && String(v).trim().length > 0;
+
+const CollapsibleSection = ({ title, text }) => {
+  const [expanded, setExpanded] = useState(false);
+  const long = text.length > 500;
+  return (
+    <section className="glass-effect rounded-xl p-5">
+      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-space-300/90">
+        {title}
+      </h3>
+      <p
+        className={`text-sm leading-relaxed text-slate-300 ${
+          !expanded && long ? 'line-clamp-6' : ''
+        }`}
+      >
+        {text}
+      </p>
+      {long && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-space-300 transition-colors hover:text-space-200"
+        >
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {expanded ? 'Show less' : 'Read more'}
+        </button>
+      )}
+    </section>
+  );
+};
 
 const PaperDetails = ({ paper }) => {
   const [activeTab, setActiveTab] = useState('abstract');
-  const [isAbstractExpanded, setIsAbstractExpanded] = useState(false);
-  const [isResultsExpanded, setIsResultsExpanded] = useState(false);
-  const [isConclusionsExpanded, setIsConclusionsExpanded] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [isAskingAI, setIsAskingAI] = useState(false);
-  const [copied, setCopied] = useState(false); 
+  const [copied, setCopied] = useState(false);
   const chatContainerRef = useRef(null);
   const [aiSummary, setAiSummary] = useState(paper?.aiSummary || '');
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
-  
   useEffect(() => {
     setChatMessages([]);
+    setActiveTab('abstract');
   }, [paper?._id]);
-  
+
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -47,24 +72,21 @@ const PaperDetails = ({ paper }) => {
 
   if (!paper) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center max-w-sm">
-          <div className="mb-6">
-            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-cosmic-500/20 to-space-500/20 rounded-full flex items-center justify-center mb-4">
-              <BookOpen className="h-12 w-12 text-cosmic-300" />
-            </div>
+      <div className="flex h-full items-center justify-center p-8">
+        <div className="max-w-xs text-center">
+          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-space-500/15 to-cosmic-500/15 ring-1 ring-white/8">
+            <BookOpen className="h-7 w-7 text-space-300" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">
-            Select a Publication
-          </h3>
-          <p className="text-gray-400 text-sm">
-            Choose a paper from the search results to view detailed information, abstracts, and AI-generated summaries.
+          <h3 className="mb-1.5 text-base font-semibold text-white">Select a publication</h3>
+          <p className="text-sm leading-relaxed text-slate-400">
+            Choose a paper from the results to read its abstract, generate an AI summary, or ask
+            questions about it.
           </p>
         </div>
       </div>
     );
   }
-  
+
   const handleAskAI = async (e) => {
     e.preventDefault();
     if (!currentQuestion.trim() || isAskingAI) return;
@@ -72,46 +94,31 @@ const PaperDetails = ({ paper }) => {
     const question = currentQuestion.trim();
     setCurrentQuestion('');
     setIsAskingAI(true);
-
-    const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      content: question,
-      timestamp: new Date().toISOString()
-    };
-    setChatMessages(prev => [...prev, userMessage]);
+    setChatMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', content: question },
+    ]);
 
     try {
       const response = await ApiService.askAIQuestion(paper._id, question, paper);
-      
       if (response.success) {
-        const aiMessage = {
-          id: Date.now() + 1,
-          type: 'ai',
-          content: response.data.answer,
-          confidence: response.data.confidence,
-          sources: response.data.sources,
-          timestamp: new Date().toISOString()
-        };
-        setChatMessages(prev => [...prev, aiMessage]);
+        setChatMessages((prev) => [
+          ...prev,
+          { id: Date.now() + 1, type: 'ai', content: response.data.answer },
+        ]);
       } else {
-        const errorMessage = {
-          id: Date.now() + 1,
-          type: 'error',
-          content: 'Sorry, I encountered an error while processing your question. Please try again.',
-          timestamp: new Date().toISOString()
-        };
-        setChatMessages(prev => [...prev, errorMessage]);
+        throw new Error('request failed');
       }
     } catch (error) {
       console.error('Error asking AI:', error);
-      const errorMessage = {
-        id: Date.now() + 1,
-        type: 'error',
-        content: 'Sorry, I encountered an error while processing your question. Please try again.',
-        timestamp: new Date().toISOString()
-      };
-      setChatMessages(prev => [...prev, errorMessage]);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          type: 'error',
+          content: 'Sorry, something went wrong while processing your question. Please try again.',
+        },
+      ]);
     } finally {
       setIsAskingAI(false);
     }
@@ -122,12 +129,12 @@ const PaperDetails = ({ paper }) => {
     setIsGeneratingSummary(true);
     try {
       const response = await ApiService.generateAISummary(paper._id, paper);
-      if (response.success && response.data && response.data.summary) {
-        setAiSummary(response.data.summary);
-      } else {
-        setAiSummary('Failed to generate summary. Please try again.');
-      }
-    } catch (error) {
+      setAiSummary(
+        response.success && response.data?.summary
+          ? response.data.summary
+          : 'Failed to generate summary. Please try again.'
+      );
+    } catch {
       setAiSummary('Failed to generate summary. Please try again.');
     } finally {
       setIsGeneratingSummary(false);
@@ -135,109 +142,99 @@ const PaperDetails = ({ paper }) => {
   };
 
   const handleCopyUrl = () => {
-    if (paper.Link) {
-      navigator.clipboard.writeText(paper.Link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    }
+    if (!paper.Link) return;
+    navigator.clipboard.writeText(paper.Link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   const tabs = [
     { id: 'abstract', label: 'Read', icon: BookOpen },
     { id: 'summary', label: 'AI Summary', icon: Sparkles },
-    { id: 'chat', label: 'AI Chat', icon: MessageCircle },
+    { id: 'chat', label: 'Ask AI', icon: MessageCircle },
   ];
 
+  const year = paper.PublishedDate ? new Date(paper.PublishedDate).getFullYear() : null;
+  const authors =
+    paper.Authors && paper.Authors.length > 0
+      ? paper.Authors.length > 4
+        ? `${paper.Authors.slice(0, 4).join(', ')} +${paper.Authors.length - 4}`
+        : paper.Authors.join(', ')
+      : 'Unknown authors';
+
   return (
-    <div className="h-full flex flex-col content-update transition-all duration-300 ease-in-out">
+    <div className="flex h-full flex-col content-update">
       {/* Header */}
-      <div className="p-4 border-b border-white/10">
-        <div className="flex items-start justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">Paper Details</h2>
-          
-          <div className="flex items-center space-x-2">
-            {/* Copy URL button */}
+      <div className="border-b border-white/8 p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-space-300/90">
+            Publication
+          </p>
+          <div className="flex items-center gap-1.5">
             <button
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200 relative"
-              title={paper.Link ? "Copy Article Link" : "No link available"}
+              className="relative grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
+              title={paper.Link ? 'Copy article link' : 'No link available'}
               onClick={handleCopyUrl}
               disabled={!paper.Link}
             >
-              <Share2 className="h-4 w-4 text-gray-400" />
-              {copied && (
-                <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-cosmic-600 text-white text-xs rounded px-2 py-1 shadow-lg z-10">
-                  Copied!
-                </span>
-              )}
+              {copied ? <Check className="h-4 w-4 text-cosmic-300" /> : <Share2 className="h-4 w-4" />}
             </button>
-          
-            {/* External link button */}
             <button
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
-              title={paper.Link ? "Open Article in New Tab" : "No link available"}
+              className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
+              title={paper.Link ? 'Open article' : 'No link available'}
               onClick={() => paper.Link && window.open(paper.Link, '_blank', 'noopener,noreferrer')}
               disabled={!paper.Link}
             >
-              <ExternalLink className="h-4 w-4 text-gray-400" />
+              <ExternalLink className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        {/* Title */}
-        <h1 className="text-xl font-bold text-white leading-tight mb-4">
-          {paper.Title}
-        </h1>
+        <h1 className="text-lg font-semibold leading-snug text-white">{paper.Title}</h1>
 
-        {/* Metadata */}
-        <div className="grid grid-cols-1 gap-3 mb-4">
-          <div className="flex items-center space-x-2 text-sm text-gray-300">
-            <Users className="h-4 w-4 text-cosmic-400" />
-            <span>
-              {paper.Authors && paper.Authors.length > 0 
-                ? paper.Authors.length > 4 
-                  ? `${paper.Authors.slice(0, 4).join(', ')}...`
-                  : paper.Authors.join(', ')
-                : 'Unknown authors'
-              }
-            </span>
+        <div className="mt-3 space-y-1.5 text-sm text-slate-300">
+          <div className="flex items-start gap-2">
+            <Users className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+            <span className="text-[13px] leading-relaxed">{authors}</span>
           </div>
-          
-          <div className="flex items-center space-x-4 text-sm text-gray-300">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-cosmic-400" />
-              <span>{new Date(paper.PublishedDate).getFullYear()}</span>
-            </div>            
-          </div>
+          {year && (
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 shrink-0 text-slate-500" />
+              <span className="text-[13px]">{year}</span>
+            </div>
+          )}
         </div>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {paper.tags?.map((tag, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 text-xs bg-gradient-to-r from-cosmic-600/30 to-space-600/30 text-cosmic-200 rounded-full border border-cosmic-500/30"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
+        {paper.tags?.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {paper.tags.map((tag, i) => (
+              <span
+                key={i}
+                className="rounded-md border border-cosmic-500/25 bg-cosmic-500/10 px-2 py-0.5 text-[10px] font-medium text-cosmic-200"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Tabs */}
-        <div className="flex space-x-1 bg-white/5 rounded-lg p-1">
+        <div className="mt-4 flex gap-1 rounded-xl bg-white/[0.04] p-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'bg-gradient-to-r from-cosmic-600 to-space-600 text-white shadow-lg'
-                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+                  active
+                    ? 'bg-gradient-to-r from-space-500 to-cosmic-500 text-white shadow'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 <Icon className="h-4 w-4" />
-                <span>{tab.label}</span>
+                {tab.label}
               </button>
             );
           })}
@@ -245,149 +242,67 @@ const PaperDetails = ({ paper }) => {
       </div>
 
       {/* Content */}
-      <div style={{
-        scrollbarWidth: "none", 
-        msOverflowStyle: "none",
-      }} className="flex-1 overflow-y-auto p-4 max-h-[600px] overflow-y-scroll">
+      <div
+        className="flex-1 overflow-y-auto p-4"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         {activeTab === 'abstract' && (
-          <div className="space-y-4 content-update">
-            {/* Abstract Section */}
-            <div className="glass-effect rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Abstract</h3>
-              <div className="relative">
-                <p className={`text-gray-300 leading-relaxed ${
-                  !isAbstractExpanded && paper.Abstract?.length > 500 ? 'line-clamp-6' : ''
-                }`}>
-                  {paper.Abstract}
+          <div className="space-y-3 content-update">
+            {hasText(paper.Abstract) && <CollapsibleSection title="Abstract" text={paper.Abstract} />}
+            {hasText(paper['Results and Discussion']) && (
+              <CollapsibleSection
+                title="Results & Discussion"
+                text={paper['Results and Discussion']}
+              />
+            )}
+            {hasText(paper.Conclusions) && (
+              <CollapsibleSection title="Conclusions" text={paper.Conclusions} />
+            )}
+            {!hasText(paper.Abstract) &&
+              !hasText(paper['Results and Discussion']) &&
+              !hasText(paper.Conclusions) && (
+                <p className="px-1 py-8 text-center text-sm text-slate-500">
+                  No full text available for this publication.
                 </p>
-                
-                {paper.Abstract?.length > 500 && (
-                  <button
-                    onClick={() => setIsAbstractExpanded(!isAbstractExpanded)}
-                    className="mt-3 flex items-center space-x-1 text-cosmic-300 hover:text-cosmic-200 transition-colors duration-200 text-sm"
-                  >
-                    {isAbstractExpanded ? (
-                      <>
-                        <ChevronUp className="h-4 w-4" />
-                        <span>Show less</span>
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-4 w-4" />
-                        <span>Read more</span>
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Results and Discussion Section */}
-            {paper['Results and Discussion'] != "Not Found" && paper['Results and Discussion'].trim() && (
-              <div className="glass-effect rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Results and Discussion</h3>
-                <div className="relative">
-                  <p className={`text-gray-300 leading-relaxed ${
-                    !isResultsExpanded && paper['Results and Discussion'].length > 500 ? 'line-clamp-6' : ''
-                  }`}>
-                    {paper['Results and Discussion']}
-                  </p>
-                  {paper['Results and Discussion'].length > 500 && (
-                    <button
-                      onClick={() => setIsResultsExpanded(!isResultsExpanded)}
-                      className="mt-3 flex items-center space-x-1 text-cosmic-300 hover:text-cosmic-200 transition-colors duration-200 text-sm"
-                    >
-                      {isResultsExpanded ? (
-                        <>
-                          <ChevronUp className="h-4 w-4" />
-                          <span>Show less</span>
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown className="h-4 w-4" />
-                          <span>Read more</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Conclusions Section  */}
-            {paper.Conclusions != "Not Found" && paper.Conclusions.trim() && (
-              <div className="glass-effect rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Conclusions</h3>
-                <div className="relative">
-                  <p className={`text-gray-300 leading-relaxed ${
-                    !isConclusionsExpanded && paper.Conclusions.length > 500 ? 'line-clamp-6' : ''
-                  }`}>
-                    {paper.Conclusions} aziz
-                  </p>
-                  {paper.Conclusions.length > 500 && (
-                    <button
-                      onClick={() => setIsConclusionsExpanded(!isConclusionsExpanded)}
-                      className="mt-3 flex items-center space-x-1 text-cosmic-300 hover:text-cosmic-200 transition-colors duration-200 text-sm"
-                    >
-                      {isConclusionsExpanded ? (
-                        <>
-                          <ChevronUp className="h-4 w-4" />
-                          <span>Show less</span>
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown className="h-4 w-4" />
-                          <span>Read more</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
+              )}
           </div>
         )}
 
         {activeTab === 'summary' && (
-          <div className="space-y-4 content-update">
-            <div className="glass-effect rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">AI Summary</h3>
+          <div className="content-update">
+            <div className="glass-effect rounded-xl p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-space-300/90">
+                  AI Summary
+                </h3>
                 <button
                   onClick={handleGenerateAISummary}
                   disabled={isGeneratingSummary}
-                  className="space-button text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="space-button text-xs disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isGeneratingSummary ? (
                     <>
-                      <Loader className="h-4 w-4 animate-spin mr-2" />
-                      Generating...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating…
                     </>
                   ) : (
                     <>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Generate Summary
+                      <Sparkles className="h-4 w-4" />
+                      {aiSummary ? 'Regenerate' : 'Generate'}
                     </>
                   )}
                 </button>
               </div>
-              <div className="bg-gradient-to-br from-cosmic-900/30 to-space-900/30 rounded-lg p-4 border border-cosmic-500/30 min-h-[200px]">
+              <div className="min-h-[180px] rounded-lg border border-white/8 bg-white/[0.02] p-4">
                 {aiSummary ? (
-                  <p className="text-gray-300 leading-relaxed">
-                    {aiSummary}
-                  </p>
+                  <p className="text-sm leading-relaxed text-slate-300">{aiSummary}</p>
                 ) : (
-                  <div className="flex items-center justify-center h-full min-h-[150px]">
-                    <div className="text-center">
-                      <Sparkles className="h-12 w-12 text-gray-500 mx-auto mb-3" />
-                      <p className="text-gray-400 text-sm mb-2">
-                        No AI summary generated yet
-                      </p>
-                      <p className="text-gray-500 text-xs">
-                        Click "Generate Summary" to create an AI-powered summary of this research paper
-                      </p>
-                    </div>
+                  <div className="flex min-h-[150px] flex-col items-center justify-center text-center">
+                    <Sparkles className="mb-3 h-8 w-8 text-slate-600" />
+                    <p className="text-sm text-slate-400">No summary yet</p>
+                    <p className="mt-1 max-w-xs text-xs text-slate-500">
+                      Generate a concise, AI-written overview of this paper's key findings.
+                    </p>
                   </div>
                 )}
               </div>
@@ -396,93 +311,69 @@ const PaperDetails = ({ paper }) => {
         )}
 
         {activeTab === 'chat' && (
-          <div className="h-full flex flex-col space-y-4 content-update">
-            {/* Chat Header */}
-            <div className="glass-effect rounded-xl p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <MessageCircle className="h-5 w-5 text-cosmic-400" />
-                <h3 className="text-lg font-semibold text-white">AI Research Assistant</h3>
-              </div>
-              <p className="text-sm text-gray-400">
-                Ask questions about this research paper and get AI-powered insights.
-              </p>
-            </div>
-
-            {/* Chat Messages */}
-            <div className="flex-1 glass-effect rounded-xl p-4 overflow-hidden flex flex-col">
-              <div 
-                ref={chatContainerRef}
-                className="flex-1 overflow-y-auto space-y-4 mb-4 custom-scrollbar"
-                style={{
-                  scrollbarWidth: "thin",
-                  scrollbarColor: "#521887 rgba(26, 26, 46, 0.3)"
-                }}
-              >
-                {chatMessages.length === 0 ? (
-                  <div className="text-center py-8">
-                    <MessageCircle className="h-12 w-12 text-gray-500 mx-auto mb-3" />
-                    <p className="text-gray-400 text-sm">
-                      Start a conversation by asking a question about this research paper.
-                    </p>
-                    <div className="mt-4 space-y-2 text-xs text-gray-500">
-                      <p>• "What are the main findings?"</p>
-                      <p>• "How does this relate to previous research?"</p>
-                      <p>• "What are the implications for space missions?"</p>
-                    </div>
+          <div className="flex h-full flex-col content-update">
+            <div
+              ref={chatContainerRef}
+              className="custom-scrollbar flex-1 space-y-3 overflow-y-auto pr-1"
+            >
+              {chatMessages.length === 0 ? (
+                <div className="flex flex-col items-center py-10 text-center">
+                  <MessageCircle className="mb-3 h-9 w-9 text-slate-600" />
+                  <p className="text-sm text-slate-300">Ask about this paper</p>
+                  <div className="mt-4 space-y-1.5 text-xs text-slate-500">
+                    <p>“What are the main findings?”</p>
+                    <p>“How does microgravity affect the results?”</p>
+                    <p>“What are the implications for space missions?”</p>
                   </div>
-                ) : (
-                  chatMessages.map((message) => (
+                </div>
+              ) : (
+                chatMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
                     <div
-                      key={message.id}
-                      className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                        message.type === 'user'
+                          ? 'rounded-br-sm bg-space-600 text-white'
+                          : message.type === 'error'
+                          ? 'border border-red-500/30 bg-red-500/10 text-red-200'
+                          : 'rounded-bl-sm border border-white/8 bg-white/[0.04] text-slate-200'
+                      }`}
                     >
-                      <div
-                        className={`max-w-[80%] rounded-xl p-4 ${
-                          message.type === 'user'
-                            ? 'bg-gradient-to-r from-cosmic-600 to-cosmic-500 text-white shadow-lg'
-                            : message.type === 'error'
-                            ? 'bg-red-600/20 border border-red-500/30 text-red-200 rounded-xl'
-                            : 'bg-gradient-to-r from-space-800/80 to-space-700/80 border border-space-600/30 text-gray-200 shadow-lg rounded-xl'
-                        }`}
-                      >
-                        <p className="text-sm leading-relaxed">{message.content}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-                
-                {/* Loading indicator */}
-                {isAskingAI && (
-                  <div className="flex justify-start">
-                    <div className="bg-space-800/50 border border-space-600/30 rounded-lg p-3">
-                      <div className="flex items-center space-x-2">
-                        <Loader className="h-4 w-4 animate-spin text-cosmic-400" />
-                        <span className="text-sm text-gray-300">AI is thinking...</span>
-                      </div>
+                      {message.content}
                     </div>
                   </div>
-                )}
-              </div>
+                ))
+              )}
 
-              {/* Chat Input */}
-              <form onSubmit={handleAskAI} className="flex space-x-2">
-                <input
-                  type="text"
-                  value={currentQuestion}
-                  onChange={(e) => setCurrentQuestion(e.target.value)}
-                  placeholder="Ask a question about this research paper..."
-                  className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cosmic-500/50 focus:border-cosmic-400 text-sm"
-                  disabled={isAskingAI}
-                />
-                <button
-                  type="submit"
-                  disabled={!currentQuestion.trim() || isAskingAI}
-                  className="px-4 py-2 bg-cosmic-600 hover:bg-cosmic-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 flex items-center space-x-2"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </form>
+              {isAskingAI && (
+                <div className="flex justify-start">
+                  <div className="inline-flex items-center gap-2 rounded-2xl rounded-bl-sm border border-white/8 bg-white/[0.04] px-4 py-2.5">
+                    <Loader2 className="h-4 w-4 animate-spin text-space-400" />
+                    <span className="text-sm text-slate-400">Thinking…</span>
+                  </div>
+                </div>
+              )}
             </div>
+
+            <form onSubmit={handleAskAI} className="mt-3 flex gap-2">
+              <input
+                type="text"
+                value={currentQuestion}
+                onChange={(e) => setCurrentQuestion(e.target.value)}
+                placeholder="Ask a question…"
+                className="search-glow flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder-slate-500"
+                disabled={isAskingAI}
+              />
+              <button
+                type="submit"
+                disabled={!currentQuestion.trim() || isAskingAI}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-space-600 text-white transition-colors hover:bg-space-500 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-slate-500"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </form>
           </div>
         )}
       </div>

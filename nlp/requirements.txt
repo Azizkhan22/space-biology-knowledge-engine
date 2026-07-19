@@ -1,5 +1,10 @@
 pymongo
 neo4j
 python-dotenv
+certifi
 spacy
-scispacy
+# Biomedical NER model (typed: GENE_OR_GENE_PRODUCT, CELL, ORGANISM, TISSUE, ...).
+# Install the model directly with --no-deps to avoid the scispacy/nmslib chain,
+# which won't build on Python 3.13. The script auto-patches its config for spaCy 3.8:
+#   pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bionlp13cg_md-0.5.4.tar.gz --no-deps
+# Fallback general model: python -m spacy download en_core_web_sm

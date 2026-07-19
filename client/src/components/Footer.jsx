@@ -1,84 +1,63 @@
-import { ExternalLink, Github, Rocket } from 'lucide-react';
+import { ExternalLink, Github, Rocket, Trophy } from 'lucide-react';
+
+const LINKS = [
+  {
+    label: 'About the challenge',
+    href: 'https://www.spaceappschallenge.org/2025/challenges/build-a-space-biology-knowledge-engine/',
+    external: true,
+  },
+  { label: 'NASA Space Apps', href: 'https://www.spaceappschallenge.org', external: true },
+  {
+    label: 'GitHub',
+    href: 'https://github.com/Azizkhan22/space-biology-knowledge-engine',
+    external: true,
+    icon: Github,
+  },
+];
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-r from-space-900/95 to-cosmic-900/95 backdrop-blur-lg border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
-          {/* Logo and Description */}
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-cosmic-500 to-space-600 rounded-lg shadow-lg">
-              <Rocket className="h-5 w-5 text-white" />
-            </div>
+    <footer className="border-t border-white/8 bg-base-900/70 backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-space-500 to-cosmic-500">
+              <Rocket className="h-4 w-4 text-white" />
+            </span>
             <div>
-              <h3 className="text-sm font-semibold bg-gradient-to-r from-cosmic-300 to-space-300 bg-clip-text text-transparent">
-                NASA BioSpace Knowledge Engine
-              </h3>
-              <p className="text-xs text-gray-400">
-                Exploring 608 NASA bioscience publications
-              </p>
+              <p className="text-sm font-semibold text-white">NASA BioSpace Knowledge Engine</p>
+              <p className="text-xs text-slate-400">Exploring 608 NASA bioscience publications</p>
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <div className="flex items-center space-x-6">
-            <a
-              href="https://www.spaceappschallenge.org/2025/challenges/build-a-space-biology-knowledge"
-              className="text-sm text-gray-400 hover:text-white transition-colors duration-200 flex items-center space-x-1"
-            >
-              <span>About</span>
-            </a>
-            
-            <a
-              href="#team"
-              className="text-sm text-gray-400 hover:text-white transition-colors duration-200 flex items-center space-x-1"
-            >
-              <span>Team</span>
-            </a>
-            
-            <a
-              href="https://www.spaceappschallenge.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-gray-400 hover:text-white transition-colors duration-200 flex items-center space-x-1"
-            >
-              <span>NASA Space Apps Challenge</span>
-              <ExternalLink className="h-3 w-3" />
-            </a>
-            
-            <a
-              href="https://github.com/Azizkhan22/space-biology-knowledge-engine"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-gray-400 hover:text-white transition-colors duration-200 flex items-center space-x-1"
-            >
-              <Github className="h-4 w-4" />
-              <span>GitHub</span>
-            </a>
-          </div>
+          {/* Links */}
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            {LINKS.map(({ label, href, external, icon: Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target={external ? '_blank' : undefined}
+                rel={external ? 'noopener noreferrer' : undefined}
+                className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-white"
+              >
+                {Icon && <Icon className="h-4 w-4" />}
+                {label}
+                {external && !Icon && <ExternalLink className="h-3 w-3 opacity-60" />}
+              </a>
+            ))}
+          </nav>
         </div>
 
-        {/* Divider */}
-        <div className="my-4 border-t border-white/10"></div>
+        <div className="my-6 h-px bg-white/8" />
 
-        {/* Bottom Section */}
-        <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
-          <div className="text-xs text-gray-500">
-            © 2025 NASA BioSpace Knowledge Engine. Built for NASA Space Apps Challenge.
-          </div>
-          
-          <div className="flex items-center space-x-4 text-xs text-gray-500">
-            <span>Awarded 1st Place 🏆 at the Nasa Space Apss Challenge Hackathon.</span>
-            <div className="flex items-center space-x-1">
-              <span>Designed and Developed by Team DEIBYTE</span>              
-            </div>
-          </div>
+        <div className="flex flex-col items-start justify-between gap-3 text-xs text-slate-500 sm:flex-row sm:items-center">
+          <p>© 2025 NASA BioSpace Knowledge Engine · Team DEIBYTE</p>
+          <p className="inline-flex items-center gap-1.5 text-slate-400">
+            <Trophy className="h-3.5 w-3.5 text-cosmic-300" />
+            1st place — NASA Space Apps Challenge Hackathon
+          </p>
         </div>
-
-        {/* Decorative Stars */}
-        <div className="absolute bottom-4 left-10 w-1 h-1 bg-white rounded-full animate-twinkle opacity-60"></div>
-        <div className="absolute bottom-8 right-20 w-0.5 h-0.5 bg-cosmic-300 rounded-full animate-twinkle opacity-40" style={{animationDelay: '1s'}}></div>
-        <div className="absolute bottom-12 left-1/3 w-0.5 h-0.5 bg-white rounded-full animate-twinkle opacity-50" style={{animationDelay: '2s'}}></div>
       </div>
     </footer>
   );

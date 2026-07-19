@@ -1,67 +1,72 @@
+import { useMemo } from 'react';
+
 const SpaceBackground = () => {
+  // Generate a stable, sparse starfield once per mount.
+  const stars = useMemo(
+    () =>
+      Array.from({ length: 70 }).map((_, i) => ({
+        id: i,
+        top: Math.random() * 100,
+        left: Math.random() * 100,
+        size: Math.random() < 0.85 ? 1 : 2,
+        delay: Math.random() * 4,
+        opacity: 0.3 + Math.random() * 0.5,
+      })),
+    []
+  );
+
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {/* Main gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"></div>
-      
-      {/* Animated nebula clouds */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-radial from-purple-500/20 via-blue-500/10 to-transparent rounded-full opacity-70 animate-float blur-xl"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-gradient-radial from-pink-500/20 via-purple-500/10 to-transparent rounded-full opacity-50 animate-float blur-xl" style={{animationDelay: '2s'}}></div>
-      <div className="absolute top-1/2 left-1/6 w-48 h-48 bg-gradient-radial from-blue-500/15 via-cyan-500/8 to-transparent rounded-full opacity-60 animate-float blur-xl" style={{animationDelay: '4s'}}></div>
-      
-      {/* Distant stars */}
-      <div className="absolute inset-0">
-        {/* Existing stars */}
-        <div className="absolute top-20 left-1/5 w-1 h-1 bg-white rounded-full animate-twinkle shadow-sm shadow-white/50"></div>
-        <div className="absolute top-32 right-1/3 w-0.5 h-0.5 bg-blue-200 rounded-full animate-twinkle shadow-sm shadow-blue-200/50" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-1/2 left-10 w-1 h-1 bg-purple-200 rounded-full animate-twinkle shadow-sm shadow-purple-200/50" style={{animationDelay: '3s'}}></div>
-        <div className="absolute bottom-1/3 right-20 w-0.5 h-0.5 bg-white rounded-full animate-twinkle shadow-sm shadow-white/50" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-1/4 left-1/2 w-0.5 h-0.5 bg-pink-200 rounded-full animate-twinkle shadow-sm shadow-pink-200/50" style={{animationDelay: '1.5s'}}></div>
-        <div className="absolute bottom-1/2 left-1/4 w-1 h-1 bg-cyan-200 rounded-full animate-twinkle shadow-sm shadow-cyan-200/50" style={{animationDelay: '0.5s'}}></div>
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+      {/* Deep-space base */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(120% 90% at 50% -10%, #0c1424 0%, #070b16 55%, #05070f 100%)',
+        }}
+      />
 
-        {/* Medium stars */}
-        <div className="absolute top-40 right-1/4 w-0.5 h-0.5 bg-white/80 rounded-full animate-twinkle" style={{animationDelay: '2.5s'}}></div>
-        <div className="absolute bottom-40 left-1/3 w-0.5 h-0.5 bg-blue-100 rounded-full animate-twinkle" style={{animationDelay: '1.8s'}}></div>
-        <div className="absolute top-1/3 right-1/6 w-0.5 h-0.5 bg-purple-100 rounded-full animate-twinkle" style={{animationDelay: '3.2s'}}></div>
-        <div className="absolute bottom-1/4 left-1/5 w-0.5 h-0.5 bg-white/70 rounded-full animate-twinkle" style={{animationDelay: '0.8s'}}></div>
+      {/* Two restrained nebula glows — space blue + biology teal */}
+      <div
+        className="absolute -top-32 left-1/4 h-[42rem] w-[42rem] rounded-full blur-3xl animate-float"
+        style={{
+          background:
+            'radial-gradient(circle at center, rgba(59,116,245,0.16) 0%, rgba(59,116,245,0) 68%)',
+        }}
+      />
+      <div
+        className="absolute bottom-[-14rem] right-[8%] h-[34rem] w-[34rem] rounded-full blur-3xl animate-float"
+        style={{
+          background:
+            'radial-gradient(circle at center, rgba(23,172,144,0.14) 0%, rgba(23,172,144,0) 70%)',
+          animationDelay: '6s',
+        }}
+      />
 
-        {/* Small distant stars */}
-        <div className="absolute top-16 left-1/3 w-px h-px bg-white/60 rounded-full animate-twinkle" style={{animationDelay: '4s'}}></div>
-        <div className="absolute top-3/4 right-1/5 w-px h-px bg-blue-50 rounded-full animate-twinkle" style={{animationDelay: '2.2s'}}></div>
-        <div className="absolute bottom-16 left-1/2 w-px h-px bg-purple-50 rounded-full animate-twinkle" style={{animationDelay: '3.7s'}}></div>
-        <div className="absolute top-1/6 right-2/5 w-px h-px bg-white/50 rounded-full animate-twinkle" style={{animationDelay: '1.3s'}}></div>
-        <div className="absolute bottom-2/3 left-3/4 w-px h-px bg-pink-50 rounded-full animate-twinkle" style={{animationDelay: '2.8s'}}></div>
+      {/* Starfield */}
+      {stars.map((s) => (
+        <span
+          key={s.id}
+          className="absolute rounded-full bg-white animate-twinkle"
+          style={{
+            top: `${s.top}%`,
+            left: `${s.left}%`,
+            width: `${s.size}px`,
+            height: `${s.size}px`,
+            opacity: s.opacity,
+            animationDelay: `${s.delay}s`,
+          }}
+        />
+      ))}
 
-        {/* Extra cluster of stars at TOP */}
-        {Array.from({ length: 40 }).map((_, i) => (
-          <div
-            key={`top-${i}`}
-            className="absolute w-px h-px bg-white/80 rounded-full animate-twinkle"
-            style={{
-              top: `${Math.random() * 20}%`, 
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 4}s`,
-            }}
-          />
-        ))}
-
-        {/* Extra cluster of stars at BOTTOM */}
-        {Array.from({ length: 40 }).map((_, i) => (
-          <div
-            key={`bottom-${i}`}
-            className="absolute w-px h-px bg-white/80 rounded-full animate-twinkle"
-            style={{
-              top: `${80 + Math.random() * 20}%`, // 80–100%
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 4}s`,
-            }}
-          />
-        ))}
-      </div>
-      
-      {/* Subtle grid overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent"></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent"></div>
+      {/* Faint vignette to seat content */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(140% 100% at 50% 40%, transparent 55%, rgba(3,5,12,0.55) 100%)',
+        }}
+      />
     </div>
   );
 };

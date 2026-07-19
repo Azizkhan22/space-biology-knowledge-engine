@@ -72,7 +72,7 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         {
           selector: 'node',
           style: {
-            'background-color': (node) => categoryColors[node.data('category')] || '#6366f1',
+            'background-color': (node) => categoryColors[node.data('category')] || '#3b74f5',
             'label': 'data(label)',
             'width': (node) => node.data('size') || 30,
             'height': (node) => node.data('size') || 30,
@@ -91,9 +91,9 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         {
           selector: 'node:selected',
           style: {
-            'background-color': '#d946ef',
+            'background-color': '#3b74f5',
             'border-width': 3,
-            'border-color': '#f0abfc',
+            'border-color': '#93bbfd',
             'width': (node) => (node.data('size') || 30) + 10,
             'height': (node) => (node.data('size') || 30) + 10,
           }
@@ -101,21 +101,21 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         {
           selector: 'node:hover',
           style: {
-            'background-color': '#c026d3',
+            'background-color': '#2559ea',
             'width': (node) => (node.data('size') || 30) + 5,
             'height': (node) => (node.data('size') || 30) + 5,
-            'box-shadow': '0 0 20px rgba(212, 70, 239, 0.6)'
+            'box-shadow': '0 0 20px rgba(59, 116, 245, 0.6)'
           }
         },
         {
           selector: 'node.selected-entity',
           style: {
-            'background-color': '#f0abfc',
+            'background-color': '#17ac90',
             'border-width': 4,
-            'border-color': '#d946ef',
+            'border-color': '#6fddc4',
             'width': (node) => (node.data('size') || 30) + 15,
             'height': (node) => (node.data('size') || 30) + 15,
-            'box-shadow': '0 0 30px rgba(240, 171, 252, 0.8)',
+            'box-shadow': '0 0 30px rgba(23, 172, 144, 0.8)',
             'z-index': 999
           }
         },
@@ -163,8 +163,8 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         {
           selector: 'edge:selected',
           style: {
-            'line-color': '#d946ef',
-            'target-arrow-color': '#d946ef',
+            'line-color': '#3b74f5',
+            'target-arrow-color': '#3b74f5',
             'opacity': 1,
             'width': (edge) => ((edge.data('weight') * 4) || 2) + 2,
           }
@@ -172,8 +172,8 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         {
           selector: 'edge:hover',
           style: {
-            'line-color': '#c026d3',
-            'target-arrow-color': '#c026d3',
+            'line-color': '#6094fa',
+            'target-arrow-color': '#6094fa',
             'opacity': 0.8
           }
         }
@@ -282,85 +282,87 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
   };
 
   return (
-    <div className={`h-full flex flex-col graph-update ${isFullscreen ? 'fixed inset-0 z-50 bg-space-900' : ''}`}>
+    <div className={`h-full flex flex-col graph-update ${isFullscreen ? 'fixed inset-0 z-50 bg-base-950' : ''}`}>
       {/* Header */}
-      <div className="p-4 border-b border-white/10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">Knowledge Graph</h2>
+      <div className="p-5 border-b border-white/8">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-space-300/90">
+              Explore
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-white">Knowledge Graph</h2>
+          </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={handleZoomIn}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
-              title="Zoom In"
+              title="Zoom in"
+              className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
             >
-              <ZoomIn className="h-4 w-4 text-gray-400" />
+              <ZoomIn className="h-4 w-4" />
             </button>
-
             <button
               onClick={handleZoomOut}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
-              title="Zoom Out"
+              title="Zoom out"
+              className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
             >
-              <ZoomOut className="h-4 w-4 text-gray-400" />
+              <ZoomOut className="h-4 w-4" />
             </button>
-
             <button
               onClick={handleReset}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
-              title="Reset View"
+              title="Reset view"
+              className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
             >
-              <RotateCcw className="h-4 w-4 text-gray-400" />
+              <RotateCcw className="h-4 w-4" />
             </button>
-
             <button
               onClick={handleFullscreen}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
-              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+              title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+              className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
             >
-              <Maximize2 className="h-4 w-4 text-gray-400" />
+              <Maximize2 className="h-4 w-4" />
             </button>
           </div>
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]">
           {currentGraphData && (currentGraphData.entities || currentGraphData.nodes)?.length > 0 ? (
-            (currentGraphData.entities || currentGraphData.nodes)
-              .slice(0, 5)
-              .map((node) => (
-                <div key={node.id} className="flex items-center space-x-1">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: categoryColors[node.category] || '#6366f1' }}
-                  ></div>
-                  <span className="text-gray-400 capitalize">{node.label}</span>
-                </div>
-              ))
+            <>
+              {(currentGraphData.entities || currentGraphData.nodes)
+                .slice(0, 5)
+                .map((node) => (
+                  <div key={node.id} className="flex items-center gap-1.5">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full ring-1 ring-white/20"
+                      style={{ backgroundColor: categoryColors[node.category] || '#3b74f5' }}
+                    />
+                    <span className="max-w-[120px] truncate text-slate-400">{node.label}</span>
+                  </div>
+                ))}
+              {(currentGraphData.entities || currentGraphData.nodes)?.length > 5 && (
+                <span className="text-slate-500">
+                  +{(currentGraphData.entities || currentGraphData.nodes).length - 5} more
+                </span>
+              )}
+            </>
           ) : (
-            <span className="text-gray-400">Loading...</span>
-          )}
-          {currentGraphData && (currentGraphData.entities || currentGraphData.nodes)?.length > 5 && (
-            <span className="text-gray-500">+more</span>
+            <span className="text-slate-500">Loading entities…</span>
           )}
         </div>
-
-
       </div>
 
       {/* Graph Container */}
       <div className="flex-1 relative">
         {/* Loader overlay */}
         {!isGraphDataReady && (
-          <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/60">
-            <div className="flex flex-col items-center">
-              <div className="loader mb-2" style={{ width: 48, height: 48 }}>
-                <svg className="animate-spin" viewBox="0 0 50 50">
-                  <circle className="opacity-25" cx="25" cy="25" r="20" fill="none" stroke="#6366f1" strokeWidth="6" />
-                  <path className="opacity-75" fill="#d946ef" d="M25 5a20 20 0 0 1 0 40V5z" />
-                </svg>
-              </div>
-              <span className="text-white text-sm">Loading Knowledge Graph...</span>
+          <div className="absolute inset-0 flex items-center justify-center z-20 bg-base-950/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3">
+              <svg className="animate-spin" viewBox="0 0 50 50" style={{ width: 40, height: 40 }}>
+                <circle className="opacity-20" cx="25" cy="25" r="20" fill="none" stroke="#3b74f5" strokeWidth="6" />
+                <path className="opacity-90" fill="#17ac90" d="M25 5a20 20 0 0 1 0 40V5z" />
+              </svg>
+              <span className="text-sm text-slate-300">Loading knowledge graph…</span>
             </div>
           </div>
         )}
@@ -368,14 +370,14 @@ const KnowledgeGraph = ({ selectedPaper, publications, graphData, onEntityClick,
         {isGraphDataReady && (
           <div
             ref={containerRef}
-            className="w-full h-full bg-gradient-to-br from-space-900/50 to-cosmic-900/30"
-            style={{ minHeight: '400px', maxHeight: '600px' }}
+            className="w-full h-full"
+            style={{ minHeight: '320px' }}
           />
         )}
         {/* Instructions */}
-        <div className="absolute bottom-4 right-4 glass-effect rounded-lg p-3">
-          <p className="text-xs text-gray-400">
-            Click nodes to explore • Drag to pan • Scroll to zoom
+        <div className="pointer-events-none absolute bottom-3 right-3 rounded-lg border border-white/8 bg-base-900/70 px-3 py-1.5 backdrop-blur-sm">
+          <p className="text-[10px] text-slate-400">
+            Click a node to explore · Drag to pan · Scroll to zoom
           </p>
         </div>
       </div>
