@@ -1,4 +1,4 @@
-# UI for NASA BioSpace Knowledge Engine
+# UI for Space Biology Knowledge Engine
 
 A clean and aesthetic React dynamic dashboard for exploring 608 NASA bioscience publications built for the NASA Space Apps Challenge.
 

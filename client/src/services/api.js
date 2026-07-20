@@ -55,6 +55,20 @@ export class ApiService {
     }
   }
   
+  static async getArticleGraph(articleId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/articles/${articleId}/graph`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch article graph');
+      }
+      return data;
+    } catch (error) {
+      console.error('Error fetching article graph:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   static async getArticlesByIds(articleIds) {
   try {
     if (!Array.isArray(articleIds) || articleIds.length === 0) {

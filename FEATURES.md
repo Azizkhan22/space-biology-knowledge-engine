@@ -1,4 +1,4 @@
-# NASA BioSpace Knowledge Engine - Feature Summary
+# NASA Space Biology Knowledge Engine - Feature Summary
 
 ## ✅ Completed Features
 

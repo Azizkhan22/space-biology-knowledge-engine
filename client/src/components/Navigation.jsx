@@ -18,7 +18,7 @@ const Navigation = ({ view, searchQuery, setSearchQuery, onSearch, onHome, onExp
               <Rocket className="h-5 w-5 text-white" />
             </span>
             <span className="hidden text-left leading-tight sm:block">
-              <span className="block text-[15px] font-semibold text-white">NASA BioSpace</span>
+              <span className="block text-[15px] font-semibold text-white">NASA Space Biology</span>
               <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
                 Knowledge Engine
               </span>
@@ -33,11 +33,16 @@ const Navigation = ({ view, searchQuery, setSearchQuery, onSearch, onHome, onExp
                   <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-space-300" />
                   <input
                     type="text"
+                    data-search-input
+                    aria-label="Search publications"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="search-glow w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-11 pr-4 text-sm text-white placeholder-slate-500 transition-colors"
+                    className="search-glow w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-11 pr-12 text-sm text-white placeholder-slate-500 transition-colors"
                     placeholder="Search publications…"
                   />
+                  <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 sm:block">
+                    /
+                  </kbd>
                 </div>
               </form>
             )}

@@ -1,4 +1,4 @@
-import { Search, Sparkles, Network, FileText } from 'lucide-react';
+import { Search, Sparkles, Network, FileText, Clock, X } from 'lucide-react';
 
 const CHIPS = [
   'Microgravity & bone loss',
@@ -17,7 +17,7 @@ const Stat = ({ icon, value, label }) => (
   </div>
 );
 
-const Hero = ({ searchQuery, setSearchQuery, onSearch, onChip, stats }) => {
+const Hero = ({ searchQuery, setSearchQuery, onSearch, onChip, stats, recent, onRecent, onClearRecent }) => {
   const submit = (e) => {
     e.preventDefault();
     onSearch(searchQuery);
@@ -59,6 +59,8 @@ const Hero = ({ searchQuery, setSearchQuery, onSearch, onChip, stats }) => {
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-space-300" />
               <input
+                data-search-input
+                aria-label="Search publications"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search, e.g. “microgravity and bone density”"
@@ -83,6 +85,34 @@ const Hero = ({ searchQuery, setSearchQuery, onSearch, onChip, stats }) => {
             </button>
           ))}
         </div>
+
+        {recent?.length > 0 && (
+          <div
+            className="reveal mx-auto mt-3 flex max-w-xl flex-wrap items-center justify-center gap-2"
+            style={{ animationDelay: '0.4s' }}
+          >
+            <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+              <Clock className="h-3 w-3" /> Recent
+            </span>
+            {recent.map((q) => (
+              <button
+                key={q}
+                onClick={() => onRecent(q)}
+                className="max-w-[220px] truncate rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs text-slate-300 transition-colors hover:border-space-400/40 hover:bg-space-500/10 hover:text-white"
+                title={q}
+              >
+                {q}
+              </button>
+            ))}
+            <button
+              onClick={onClearRecent}
+              aria-label="Clear recent searches"
+              className="rounded-full p-1 text-slate-500 transition-colors hover:text-slate-300"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
 
         <div className="reveal mx-auto mt-12 grid max-w-xl grid-cols-3 gap-3" style={{ animationDelay: '0.44s' }}>
           <Stat icon={<FileText className="h-4 w-4" />} value="608" label="Publications" />

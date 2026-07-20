@@ -24,6 +24,9 @@ const ExploreView = ({
   isLoadingEntity,
   onOpenPaper,
   onBack,
+  eyebrow = 'Explore',
+  title = 'Knowledge Graph',
+  subtitle,
 }) => {
   return (
     <div className="mx-auto flex h-full w-full max-w-[1700px] flex-col lg:flex-row">
@@ -36,6 +39,9 @@ const ExploreView = ({
             graphData={graphData}
             onEntityClick={onEntityClick}
             selectedEntity={selectedEntity}
+            eyebrow={eyebrow}
+            title={title}
+            subtitle={subtitle}
           />
         )}
       </div>

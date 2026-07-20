@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { FileSearch, SlidersHorizontal } from 'lucide-react';
+import { FileSearch, SlidersHorizontal, AlertTriangle, RotateCw } from 'lucide-react';
 import PublicationCard from './PublicationCard';
 
 const ListSkeleton = () => (
@@ -14,7 +14,7 @@ const ListSkeleton = () => (
   </div>
 );
 
-const ResultsList = ({ publications, selectedPaper, onSelect, isLoading, context }) => {
+const ResultsList = ({ publications, selectedPaper, onSelect, isLoading, context, error, onRetry }) => {
   const [year, setYear] = useState('all');
   const [topic, setTopic] = useState('all');
 
@@ -72,7 +72,7 @@ const ResultsList = ({ publications, selectedPaper, onSelect, isLoading, context
         </h2>
         <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-400">
           <span>{header.sub}</span>
-          {!isLoading && (
+          {!isLoading && !error && (
             <>
               <span className="text-slate-600">·</span>
               <span className="text-slate-300">{filtered.length} results</span>
@@ -114,6 +114,23 @@ const ResultsList = ({ publications, selectedPaper, onSelect, isLoading, context
       {/* Body */}
       {isLoading ? (
         <ListSkeleton />
+      ) : error ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-8 py-16 text-center">
+          <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-red-500/10 ring-1 ring-red-500/20">
+            <AlertTriangle className="h-6 w-6 text-red-300" />
+          </div>
+          <p className="text-sm font-medium text-slate-200">Couldn&apos;t run the search</p>
+          <p className="mt-1 max-w-xs text-xs text-slate-500">{error}</p>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:bg-white/[0.08]"
+            >
+              <RotateCw className="h-3.5 w-3.5" />
+              Try again
+            </button>
+          )}
+        </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center px-8 py-16 text-center">
           <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-white/[0.04] ring-1 ring-white/8">
