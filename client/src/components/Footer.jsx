@@ -26,7 +26,7 @@ const Footer = () => {
               <Rocket className="h-4 w-4 text-white" />
             </span>
             <div>
-              <p className="text-sm font-semibold text-white">Space Biology Knowledge Engine</p>
+              <p className="text-sm font-semibold text-white">NASA Space Biology Knowledge Engine</p>
               <p className="text-xs text-slate-400">Exploring 608 NASA bioscience publications</p>
             </div>
           </div>
@@ -52,7 +52,7 @@ const Footer = () => {
         <div className="my-6 h-px bg-white/8" />
 
         <div className="flex flex-col items-start justify-between gap-3 text-xs text-slate-500 sm:flex-row sm:items-center">
-          <p>© 2025 Space Biology Knowledge Engine · Team DEIBYTE</p>
+          <p>© 2025 NASA Space Biology Knowledge Engine · Team DEIBYTE</p>
           <p className="inline-flex items-center gap-1.5 text-slate-400">
             <Trophy className="h-3.5 w-3.5 text-cosmic-300" />
             1st place — NASA Space Apps Challenge Hackathon
