@@ -22,3 +22,5 @@ rad.json
 TestResults.xml
 dbWorks
 node_modules
+*.env
+/nlp/.env
